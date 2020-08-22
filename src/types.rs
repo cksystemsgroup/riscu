@@ -1,4 +1,6 @@
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+use core::fmt;
+
+#[derive(Clone, Copy, Eq, Hash, PartialEq)]
 pub struct RType(pub u32);
 impl RType {
     pub fn rs2(&self) -> u32 {
@@ -12,7 +14,20 @@ impl RType {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+impl fmt::Debug for RType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{} => rd: {}, rs1: {}, rs2: {}",
+            format_args!("0x{:X}", self.0),
+            self.rd(),
+            self.rs1(),
+            self.rs2()
+        )
+    }
+}
+
+#[derive(Clone, Copy, Eq, Hash, PartialEq)]
 pub struct CsrType(pub u32);
 impl CsrType {
     pub fn csr(&self) -> u32 {
@@ -26,7 +41,20 @@ impl CsrType {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+impl fmt::Debug for CsrType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{} => rd: {}, rs1: {}, csr: {}",
+            format_args!("0x{:X}", self.0),
+            self.rd(),
+            self.rs1(),
+            self.csr()
+        )
+    }
+}
+
+#[derive(Clone, Copy, Eq, Hash, PartialEq)]
 pub struct CsrIType(pub u32);
 impl CsrIType {
     pub fn csr(&self) -> u32 {
@@ -40,7 +68,20 @@ impl CsrIType {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+impl fmt::Debug for CsrIType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{} => rd: {}, zimm: {}, csr: {}",
+            format_args!("0x{:X}", self.0),
+            self.rd(),
+            self.zimm(),
+            self.csr()
+        )
+    }
+}
+
+#[derive(Clone, Copy, Eq, Hash, PartialEq)]
 pub struct IType(pub u32);
 impl IType {
     pub fn imm(&self) -> u32 {
@@ -54,7 +95,20 @@ impl IType {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+impl fmt::Debug for IType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{} => rd: {}, rs1: {}, imm: {}",
+            format_args!("0x{:X}", self.0),
+            self.rd(),
+            self.rs1(),
+            self.imm()
+        )
+    }
+}
+
+#[derive(Clone, Copy, Eq, Hash, PartialEq)]
 pub struct SType(pub u32);
 impl SType {
     pub fn imm(&self) -> u32 {
@@ -68,7 +122,20 @@ impl SType {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+impl fmt::Debug for SType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{} => imm: {}, rs1: {}, rs2: {}",
+            format_args!("0x{:X}", self.0),
+            self.imm(),
+            self.rs1(),
+            self.rs2()
+        )
+    }
+}
+
+#[derive(Clone, Copy, Eq, Hash, PartialEq)]
 pub struct BType(pub u32);
 impl BType {
     pub fn imm(&self) -> u32 {
@@ -85,7 +152,20 @@ impl BType {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+impl fmt::Debug for BType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{} => imm: {}, rs1: {}, rs2: {}",
+            format_args!("0x{:X}", self.0),
+            self.imm(),
+            self.rs1(),
+            self.rs2()
+        )
+    }
+}
+
+#[derive(Clone, Copy, Eq, Hash, PartialEq)]
 pub struct UType(pub u32);
 impl UType {
     pub fn imm(&self) -> u32 {
@@ -96,7 +176,19 @@ impl UType {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+impl fmt::Debug for UType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{} => rd: {}, imm: {}",
+            format_args!("0x{:X}", self.0),
+            self.rd(),
+            self.imm()
+        )
+    }
+}
+
+#[derive(Clone, Copy, Eq, Hash, PartialEq)]
 pub struct JType(pub u32);
 impl JType {
     pub fn imm(&self) -> u32 {
@@ -110,7 +202,19 @@ impl JType {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+impl fmt::Debug for JType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{} => rd: {}, imm: {}",
+            format_args!("0x{:X}", self.0),
+            self.rd(),
+            self.imm()
+        )
+    }
+}
+
+#[derive(Clone, Copy, Eq, Hash, PartialEq)]
 pub struct FenceType(pub u32);
 impl FenceType {
     pub fn pred(&self) -> u32 {
@@ -121,7 +225,19 @@ impl FenceType {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+impl fmt::Debug for FenceType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{} => pred: {}, succ: {}",
+            format_args!("0x{:X}", self.0),
+            self.pred(),
+            self.succ()
+        )
+    }
+}
+
+#[derive(Clone, Copy, Eq, Hash, PartialEq)]
 pub struct ShiftType(pub u32);
 impl ShiftType {
     pub fn shamt(&self) -> u32 {
@@ -132,6 +248,19 @@ impl ShiftType {
     }
     pub fn rd(&self) -> u32 {
         (self.0 >> 7) & 0x1f
+    }
+}
+
+impl fmt::Debug for ShiftType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{} => rd: {}, rs1: {}, shamt: {}",
+            format_args!("0x{:X}", self.0),
+            self.rd(),
+            self.rs1(),
+            self.shamt()
+        )
     }
 }
 
