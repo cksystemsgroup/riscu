@@ -18,8 +18,7 @@ impl fmt::Debug for RType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{} => rd: {}, rs1: {}, rs2: {}",
-            format_args!("0x{:X}", self.0),
+            "rd: {}, rs1: {}, rs2: {}",
             self.rd(),
             self.rs1(),
             self.rs2()
@@ -45,8 +44,7 @@ impl fmt::Debug for CsrType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{} => rd: {}, rs1: {}, csr: {}",
-            format_args!("0x{:X}", self.0),
+            "rd: {}, rs1: {}, csr: {}",
             self.rd(),
             self.rs1(),
             self.csr()
@@ -72,8 +70,7 @@ impl fmt::Debug for CsrIType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{} => rd: {}, zimm: {}, csr: {}",
-            format_args!("0x{:X}", self.0),
+            "rd: {}, zimm: {}, csr: {}",
             self.rd(),
             self.zimm(),
             self.csr()
@@ -99,8 +96,7 @@ impl fmt::Debug for IType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{} => rd: {}, rs1: {}, imm: {}",
-            format_args!("0x{:X}", self.0),
+            "rd: {}, rs1: {}, imm: {}",
             self.rd(),
             self.rs1(),
             self.imm()
@@ -126,8 +122,7 @@ impl fmt::Debug for SType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{} => imm: {}, rs1: {}, rs2: {}",
-            format_args!("0x{:X}", self.0),
+            "imm: {}, rs1: {}, rs2: {}",
             self.imm(),
             self.rs1(),
             self.rs2()
@@ -156,8 +151,7 @@ impl fmt::Debug for BType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{} => imm: {}, rs1: {}, rs2: {}",
-            format_args!("0x{:X}", self.0),
+            "imm: {}, rs1: {}, rs2: {}",
             self.imm(),
             self.rs1(),
             self.rs2()
@@ -180,8 +174,7 @@ impl fmt::Debug for UType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{} => rd: {}, imm: {}",
-            format_args!("0x{:X}", self.0),
+            "rd: {}, imm: {}",
             self.rd(),
             self.imm()
         )
@@ -206,8 +199,7 @@ impl fmt::Debug for JType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{} => rd: {}, imm: {}",
-            format_args!("0x{:X}", self.0),
+            "rd: {}, imm: {}",
             self.rd(),
             self.imm()
         )
@@ -229,8 +221,7 @@ impl fmt::Debug for FenceType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{} => pred: {}, succ: {}",
-            format_args!("0x{:X}", self.0),
+            "pred: {}, succ: {}",
             self.pred(),
             self.succ()
         )
@@ -255,8 +246,7 @@ impl fmt::Debug for ShiftType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{} => rd: {}, rs1: {}, shamt: {}",
-            format_args!("0x{:X}", self.0),
+            "rd: {}, rs1: {}, shamt: {}",
             self.rd(),
             self.rs1(),
             self.shamt()
