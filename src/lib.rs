@@ -2,11 +2,13 @@
 
 mod compressed;
 mod instruction;
+pub mod register;
 pub mod types;
 
 use types::*;
 
 pub use instruction::Instruction;
+pub use register::Register;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum DecodingError {
@@ -216,7 +218,7 @@ fn decode_branch(i: u32) -> DecodingResult {
 fn decode_system(i: u32) -> DecodingResult {
     match i {
         // Environment Call and Breakpoint
-        0b000000000000_00000_000_00000_1110011 => return Ok(Instruction::Ecall),
+        0b000000000000_00000_000_00000_1110011 => return Ok(Instruction::Ecall(IType(i))),
         0b000000000001_00000_000_00000_1110011 => return Ok(Instruction::Ebreak),
         // Trap-Return Instructions
         0b0000000_00010_00000_000_00000_1110011 => return Ok(Instruction::Uret),
@@ -488,7 +490,7 @@ mod tests {
 
     #[test]
     fn system() {
-        assert_eq!(decode(0x00000073).unwrap(), Ecall); // ecall
+        assert_eq!(decode(0x00000073).unwrap(), Instruction::new_ecall()); // ecall
         assert_eq!(decode(0x10200073).unwrap(), Sret); // sret
         assert_eq!(decode(0x30200073).unwrap(), Mret); // mret
         assert_eq!(decode(0x10500073).unwrap(), Wfi); // wfi
