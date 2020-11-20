@@ -6,26 +6,22 @@ use goblin::elf::{program_header::PT_LOAD, Elf};
 use std::{fs, mem::size_of, path::Path};
 use thiserror::Error;
 
-/// ELF image metadata.
 #[derive(Clone, Debug)]
-pub struct ElfMetadata {
-    /// The entry virtual address.
-    pub entry_address: u64,
-    pub code_length: u64,
+pub struct ProgramSegment<T> {
+    pub address: u64,
+    pub content: Vec<T>,
 }
 
 #[derive(Clone, Debug)]
-pub struct RiscuProgram {
-    pub code_segment: Vec<u8>,
-    pub data_segment: Vec<u8>,
-    pub entry_address: u64,
+pub struct Program {
+    pub code: ProgramSegment<u8>,
+    pub data: ProgramSegment<u8>,
 }
 
 #[derive(Clone, Debug)]
-pub struct DecodedRiscuProgram {
-    pub code_segment: Vec<Instruction>,
-    pub data_segment: Vec<u64>,
-    pub entry_address: u64,
+pub struct DecodedProgram {
+    pub code: ProgramSegment<Instruction>,
+    pub data: ProgramSegment<u64>,
 }
 
 #[derive(Error, Debug)]
@@ -43,14 +39,14 @@ pub enum ElfLoaderError {
     DecodingError(DecodingError),
 }
 
-pub fn load_object_file<P>(object_file: P) -> Result<RiscuProgram, ElfLoaderError>
+pub fn load_object_file<P>(object_file: P) -> Result<Program, ElfLoaderError>
 where
     P: AsRef<Path>,
 {
     load_elf_file(object_file, |p| Ok(copy_segments(p)))
 }
 
-pub fn load_and_decode_object_file<P>(object_file: P) -> Result<DecodedRiscuProgram, ElfLoaderError>
+pub fn load_and_decode_object_file<P>(object_file: P) -> Result<DecodedProgram, ElfLoaderError>
 where
     P: AsRef<Path>,
 {
@@ -60,7 +56,7 @@ where
 fn load_elf_file<P, F, R>(object_file: P, collect: F) -> Result<R, ElfLoaderError>
 where
     P: AsRef<Path>,
-    F: Fn((&[u8], &[u8], u64)) -> Result<R, ElfLoaderError>,
+    F: Fn([(u64, &[u8]); 2]) -> Result<R, ElfLoaderError>,
     R: Sized,
 {
     fs::read(object_file)
@@ -75,7 +71,7 @@ where
 fn extract_program_info<'a>(
     raw: &'a [u8],
     elf: &Elf,
-) -> Result<(&'a [u8], &'a [u8], u64), ElfLoaderError> {
+) -> Result<[(u64, &'a [u8]); 2], ElfLoaderError> {
     if elf.is_lib || !elf.is_64 || !elf.little_endian {
         return Err(ElfLoaderError::InvalidRiscu(
             "has to be an executable, 64bit, static, little endian binary",
@@ -114,40 +110,47 @@ fn extract_program_info<'a>(
             }
         };
 
+    let code_start = code_segment_header.p_vaddr;
     let code_segment = &raw[code_segment_header.file_range()];
-    let data_segment = &raw[data_segment_header.file_range()];
-    let entry_address = elf.entry;
 
-    Ok((code_segment, data_segment, entry_address))
+    let data_start = code_segment_header.p_vaddr;
+    let data_segment = &raw[data_segment_header.file_range()];
+
+    Ok([(code_start, code_segment), (data_start, data_segment)])
 }
 
-fn copy_segments(program: (&[u8], &[u8], u64)) -> RiscuProgram {
-    RiscuProgram {
-        code_segment: Vec::from(program.0),
-        data_segment: Vec::from(program.1),
-        entry_address: program.2,
+fn copy_segments(segments: [(u64, &[u8]); 2]) -> Program {
+    Program {
+        code: ProgramSegment {
+            address: segments[0].0,
+            content: Vec::from(segments[0].1),
+        },
+        data: ProgramSegment {
+            address: segments[1].0,
+            content: Vec::from(segments[1].1),
+        },
     }
 }
 
-fn copy_and_decode_segments(
-    program: (&[u8], &[u8], u64),
-) -> Result<DecodedRiscuProgram, ElfLoaderError> {
-    let code_segment = program
-        .0
-        .chunks_exact(size_of::<u32>())
-        .map(LittleEndian::read_u32)
-        .map(|raw| decode(raw).map_err(ElfLoaderError::DecodingError))
-        .collect::<Result<Vec<_>, _>>()?;
+fn copy_and_decode_segments(segments: [(u64, &[u8]); 2]) -> Result<DecodedProgram, ElfLoaderError> {
+    let code = ProgramSegment {
+        address: segments[0].0,
+        content: segments[0]
+            .1
+            .chunks_exact(size_of::<u32>())
+            .map(LittleEndian::read_u32)
+            .map(|raw| decode(raw).map_err(ElfLoaderError::DecodingError))
+            .collect::<Result<Vec<_>, _>>()?,
+    };
 
-    let data_segment = program
-        .1
-        .chunks_exact(size_of::<u64>())
-        .map(LittleEndian::read_u64)
-        .collect::<Vec<_>>();
+    let data = ProgramSegment {
+        address: segments[1].0,
+        content: segments[1]
+            .1
+            .chunks_exact(size_of::<u64>())
+            .map(LittleEndian::read_u64)
+            .collect::<Vec<_>>(),
+    };
 
-    Ok(DecodedRiscuProgram {
-        code_segment,
-        data_segment,
-        entry_address: program.2,
-    })
+    Ok(DecodedProgram { code, data })
 }
