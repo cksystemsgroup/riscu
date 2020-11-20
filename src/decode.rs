@@ -15,19 +15,30 @@
 // This module was modified by the Selfie authors.
 
 use crate::{types::*, Instruction};
+use thiserror::Error;
 
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Error)]
 pub enum DecodingError {
     /// Instruction's opcode is reserved for custom extentions and thus can't be decoded further.
+    #[error(
+        "Instruction's opcode is reserved for custom extentions and thus can't be decoded further"
+    )]
     Custom,
+
     /// Instruction's opcode is reserved for future standard extentions.
+    #[error("Instruction's opcode is reserved for future standard extentions")]
     Reserved,
+
     /// Instruction bit pattern not defined in current specification.
+    #[error("Instruction bit pattern not defined in current specification")]
     Unknown,
+
     /// More bits from the instruction are required to fully decode it.
+    #[error("More bits from the instruction are required to fully decode it")]
     Truncated,
-    /// Instruction type is well defined but is part of some extension this library doesn't support
-    /// decoding yet.
+
+    /// Instruction type is well defined but is not part of RISC-U
+    #[error("Instruction type is well defined but is not part of RISC-U")]
     Unimplemented,
 }
 
