@@ -18,6 +18,15 @@ pub struct Program {
     pub data: ProgramSegment<u8>,
 }
 
+impl Program {
+    pub fn decode(&self) -> Result<DecodedProgram, RiscuError> {
+        copy_and_decode_segments([
+            (self.code.address, self.code.content.as_slice()),
+            (self.data.address, self.data.content.as_slice()),
+        ])
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct DecodedProgram {
     pub code: ProgramSegment<Instruction>,
@@ -25,7 +34,7 @@ pub struct DecodedProgram {
 }
 
 #[derive(Error, Debug)]
-pub enum ElfLoaderError {
+pub enum RiscuError {
     #[error("Error while reading file: {0}")]
     CouldNotReadFile(std::io::Error),
 
@@ -39,41 +48,38 @@ pub enum ElfLoaderError {
     DecodingError(DecodingError),
 }
 
-pub fn load_object_file<P>(object_file: P) -> Result<Program, ElfLoaderError>
+pub fn load_object_file<P>(object_file: P) -> Result<Program, RiscuError>
 where
     P: AsRef<Path>,
 {
     load_elf_file(object_file, |p| Ok(copy_segments(p)))
 }
 
-pub fn load_and_decode_object_file<P>(object_file: P) -> Result<DecodedProgram, ElfLoaderError>
+pub fn load_and_decode_object_file<P>(object_file: P) -> Result<DecodedProgram, RiscuError>
 where
     P: AsRef<Path>,
 {
     load_elf_file(object_file, copy_and_decode_segments)
 }
 
-fn load_elf_file<P, F, R>(object_file: P, collect: F) -> Result<R, ElfLoaderError>
+fn load_elf_file<P, F, R>(object_file: P, collect: F) -> Result<R, RiscuError>
 where
     P: AsRef<Path>,
-    F: Fn([(u64, &[u8]); 2]) -> Result<R, ElfLoaderError>,
+    F: Fn([(u64, &[u8]); 2]) -> Result<R, RiscuError>,
     R: Sized,
 {
     fs::read(object_file)
-        .map_err(ElfLoaderError::CouldNotReadFile)
+        .map_err(RiscuError::CouldNotReadFile)
         .and_then(|buffer| {
             Elf::parse(&buffer)
-                .map_err(ElfLoaderError::InvalidElf)
+                .map_err(RiscuError::InvalidElf)
                 .and_then(|elf| extract_program_info(&buffer, &elf).and_then(collect))
         })
 }
 
-fn extract_program_info<'a>(
-    raw: &'a [u8],
-    elf: &Elf,
-) -> Result<[(u64, &'a [u8]); 2], ElfLoaderError> {
+fn extract_program_info<'a>(raw: &'a [u8], elf: &Elf) -> Result<[(u64, &'a [u8]); 2], RiscuError> {
     if elf.is_lib || !elf.is_64 || !elf.little_endian {
-        return Err(ElfLoaderError::InvalidRiscu(
+        return Err(RiscuError::InvalidRiscu(
             "has to be an executable, 64bit, static, little endian binary",
         ));
     }
@@ -85,7 +91,7 @@ fn extract_program_info<'a>(
         .filter(|ph| ph.p_type == PT_LOAD);
 
     if elf.header.e_phnum != 2 || ph_iter.clone().count() != 2 {
-        return Err(ElfLoaderError::InvalidRiscu("must have 2 program segments"));
+        return Err(RiscuError::InvalidRiscu("must have 2 program segments"));
     }
 
     let code_segment_header = match ph_iter
@@ -94,7 +100,7 @@ fn extract_program_info<'a>(
     {
         Some(segment) => segment,
         None => {
-            return Err(ElfLoaderError::InvalidRiscu(
+            return Err(RiscuError::InvalidRiscu(
                 "code segment (must be executable only) is missing",
             ))
         }
@@ -104,7 +110,7 @@ fn extract_program_info<'a>(
         match ph_iter.find(|ph| ph.is_write() && ph.is_read() && !ph.is_executable()) {
             Some(segment) => segment,
             None => {
-                return Err(ElfLoaderError::InvalidRiscu(
+                return Err(RiscuError::InvalidRiscu(
                     "data segment (must be readable and writable only) is missing",
                 ))
             }
@@ -132,14 +138,14 @@ fn copy_segments(segments: [(u64, &[u8]); 2]) -> Program {
     }
 }
 
-fn copy_and_decode_segments(segments: [(u64, &[u8]); 2]) -> Result<DecodedProgram, ElfLoaderError> {
+fn copy_and_decode_segments(segments: [(u64, &[u8]); 2]) -> Result<DecodedProgram, RiscuError> {
     let code = ProgramSegment {
         address: segments[0].0,
         content: segments[0]
             .1
             .chunks_exact(size_of::<u32>())
             .map(LittleEndian::read_u32)
-            .map(|raw| decode(raw).map_err(ElfLoaderError::DecodingError))
+            .map(|raw| decode(raw).map_err(RiscuError::DecodingError))
             .collect::<Result<Vec<_>, _>>()?,
     };
 
