@@ -1,6 +1,6 @@
 [package]
 name = "riscu"
-version ="0.3.0"
+version ="0.3.1"
 authors = ["Jonathan Behrens <fintelia@gmail.com>", "Christian Mösl <christian.moesl@live.at>", "Fabian Nedoluha <monster@onders.org>"]
 edition = "2018"
 description = "A simple library for loading/encoding RISC-U ELF64 binaries"
