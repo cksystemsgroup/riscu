@@ -119,7 +119,7 @@ fn extract_program_info<'a>(raw: &'a [u8], elf: &Elf) -> Result<[(u64, &'a [u8])
     let code_start = code_segment_header.p_vaddr;
     let code_segment = &raw[code_segment_header.file_range()];
 
-    let data_start = code_segment_header.p_vaddr;
+    let data_start = data_segment_header.p_vaddr;
     let data_segment = &raw[data_segment_header.file_range()];
 
     Ok([(code_start, code_segment), (data_start, data_segment)])
