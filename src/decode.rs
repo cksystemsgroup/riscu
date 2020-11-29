@@ -17,6 +17,9 @@
 use crate::{types::*, Instruction};
 use thiserror::Error;
 
+pub const INSTRUCTION_SIZE: usize = 4;
+pub const WORD_SIZE: usize = 8;
+
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Error)]
 pub enum DecodingError {
     /// Instruction's opcode is reserved for custom extentions and thus can't be decoded further.
