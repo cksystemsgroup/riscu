@@ -2,16 +2,23 @@ use riscu::load_and_decode_object_file;
 use std::{path::PathBuf, process::Command};
 use tempfile::{tempdir, TempDir};
 
-pub fn compile_selfie() -> (TempDir, PathBuf) {
+fn with_temp_dir<F, R>(f: F) -> R
+where
+    F: FnOnce(&TempDir) -> R,
+{
     let temp_dir = tempdir().unwrap();
 
+    f(&temp_dir)
+}
+
+fn compile_selfie(temp_dir: &TempDir) -> PathBuf {
     let dst_file = "selfie.o";
     let dst_file_path = temp_dir.path().join(dst_file);
 
     Command::new("docker")
         .arg("run")
         .arg("-v")
-        .arg(format!("{}:/opt/dst", temp_dir.as_ref().display()))
+        .arg(format!("{}:/opt/dst", temp_dir.path().display()))
         .arg("cksystemsteaching/selfie")
         .arg("/opt/selfie/selfie")
         .arg("-c")
@@ -21,14 +28,16 @@ pub fn compile_selfie() -> (TempDir, PathBuf) {
         .output()
         .expect("Selfie C* compile command was not successfull");
 
-    (temp_dir, dst_file_path)
+    dst_file_path
 }
 
 #[test]
 fn decode_selfie_binary() {
-    let (_, object_file) = compile_selfie();
+    let result = with_temp_dir(|dir| {
+        let object_file = compile_selfie(dir);
 
-    let result = load_and_decode_object_file(object_file);
+        load_and_decode_object_file(object_file)
+    });
 
     assert!(
         result.is_ok(),

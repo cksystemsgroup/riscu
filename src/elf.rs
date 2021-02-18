@@ -96,12 +96,12 @@ fn extract_program_info<'a>(raw: &'a [u8], elf: &Elf) -> Result<[(u64, &'a [u8])
 
     let code_segment_header = match ph_iter
         .clone()
-        .find(|ph| !ph.is_write() && !ph.is_read() && ph.is_executable())
+        .find(|ph| !ph.is_write() && ph.is_read() && ph.is_executable())
     {
         Some(segment) => segment,
         None => {
             return Err(RiscuError::InvalidRiscu(
-                "code segment (must be executable only) is missing",
+                "code segment (readable and executable) is missing",
             ))
         }
     };
@@ -111,7 +111,7 @@ fn extract_program_info<'a>(raw: &'a [u8], elf: &Elf) -> Result<[(u64, &'a [u8])
             Some(segment) => segment,
             None => {
                 return Err(RiscuError::InvalidRiscu(
-                    "data segment (must be readable and writable only) is missing",
+                    "data segment (readable and writable) is missing",
                 ))
             }
         };
