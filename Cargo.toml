@@ -12,9 +12,9 @@ categories = ["embedded", "encoding", "parsing"]
 keywords = ["riscv", "riscu"]
 
 [dependencies]
-thiserror = "~1.0.22"
-byteorder = "~1.3.4"
-goblin = "~0.2.3"
+thiserror = "~1.0.24"
+byteorder = "~1.4.2"
+goblin = "~0.3.4"
 
 [dev-dependencies]
 tempfile = "~3.1.0"
