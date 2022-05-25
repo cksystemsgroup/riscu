@@ -16,20 +16,21 @@
 
 use crate::{types::*, Instruction};
 use thiserror::Error;
+use log::debug;
 
 pub const INSTRUCTION_SIZE: usize = 4;
 pub const WORD_SIZE: usize = 8;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Error)]
 pub enum DecodingError {
-    /// Instruction's opcode is reserved for custom extentions and thus can't be decoded further.
+    /// Instruction's opcode is reserved for custom extensions and thus can't be decoded further.
     #[error(
-        "Instruction's opcode is reserved for custom extentions and thus can't be decoded further"
+        "Instruction's opcode is reserved for custom extensions and thus can't be decoded further"
     )]
     Custom,
 
-    /// Instruction's opcode is reserved for future standard extentions.
-    #[error("Instruction's opcode is reserved for future standard extentions")]
+    /// Instruction's opcode is reserved for future standard extensions.
+    #[error("Instruction's opcode is reserved for future standard extensions")]
     Reserved,
 
     /// Instruction bit pattern not defined in current specification.
@@ -68,21 +69,23 @@ pub fn instruction_length(i: u16) -> usize {
 
 /// Decode the given instruction.
 pub fn decode(i: u32) -> DecodingResult {
+    debug!("opcode: {:#09b}, funct3: {:#05b}, funct7: {:#09b}; full instr.: {:#034b}", i & 0b1111111, (i >> 12) & 0b111, (i >> 25) & 0b1111111, i);
+
     match i & 0b11 {
         0b11 => match (i >> 2) & 0b11111 {
             0b00000 => decode_load(i),
             0b00001 => Err(DecodingError::Unimplemented), // Load-FP
             0b00010 => Err(DecodingError::Custom),
-            0b00011 => Err(DecodingError::Unknown), // misc mem instruction
+            0b00011 => decode_fence(i), // misc mem instruction
             0b00100 => decode_op_imm(i),
-            0b00101 => Err(DecodingError::Unknown), // aupic instruction
-            0b00110 => Err(DecodingError::Unknown), // op imm32 instruction
+            0b00101 => decode_auipc(i), // aupic instruction
+            0b00110 => decode_op_imm32(i), // op imm32 instruction
             0b00111 => Err(DecodingError::Reserved), // 48bit instruction
 
             0b01000 => decode_store(i),
             0b01001 => Err(DecodingError::Unimplemented), // Store-FP
             0b01010 => Err(DecodingError::Custom),
-            0b01011 => Err(DecodingError::Unimplemented), // AMO
+            0b01011 => decode_amo(i),
             0b01100 => decode_op(i),
             0b01101 => Ok(Instruction::Lui(UType(i))),
             0b01110 => Err(DecodingError::Unknown), // op32 instruction
@@ -114,7 +117,13 @@ pub fn decode(i: u32) -> DecodingResult {
 #[inline(always)]
 fn decode_load(i: u32) -> DecodingResult {
     match (i >> 12) & 0b111 {
+        0b000 => Ok(Instruction::Lb(IType(i))),
+        0b001 => Ok(Instruction::Lh(IType(i))),
+        0b010 => Ok(Instruction::Lw(IType(i))),
         0b011 => Ok(Instruction::Ld(IType(i))),
+        0b100 => Ok(Instruction::Lbu(IType(i))),
+        0b101 => Ok(Instruction::Lhu(IType(i))),
+        0b110 => Ok(Instruction::Lwu(IType(i))),
         0b111 => Err(DecodingError::Reserved),
         _ => Err(DecodingError::Unknown),
     }
@@ -124,6 +133,20 @@ fn decode_load(i: u32) -> DecodingResult {
 fn decode_op_imm(i: u32) -> DecodingResult {
     match (i >> 12) & 0b111 {
         0b000 => Ok(Instruction::Addi(IType(i))),
+        0b111 => Ok(Instruction::Andi(IType(i))),
+        _ => Err(DecodingError::Unknown),
+    }
+}
+
+#[inline(always)]
+fn decode_auipc(i: u32) -> DecodingResult {
+    Ok(Instruction::Auipc(UType(i)))
+}
+
+#[inline(always)]
+fn decode_op_imm32(i: u32) -> DecodingResult {
+    match (i >> 12) & 0b111 {
+        0b000 => Ok(Instruction::Addiw(IType(i))),
         _ => Err(DecodingError::Unknown),
     }
 }
@@ -131,6 +154,9 @@ fn decode_op_imm(i: u32) -> DecodingResult {
 #[inline(always)]
 fn decode_store(i: u32) -> DecodingResult {
     match (i >> 12) & 0b111 {
+        0b000 => Ok(Instruction::Sb(SType(i))),
+        0b001 => Ok(Instruction::Sh(SType(i))),
+        0b010 => Ok(Instruction::Sw(SType(i))),
         0b011 => Ok(Instruction::Sd(SType(i))),
         _ => Err(DecodingError::Unknown),
     }
@@ -152,6 +178,11 @@ fn decode_op(i: u32) -> DecodingResult {
 fn decode_branch(i: u32) -> DecodingResult {
     match (i >> 12) & 0b111 {
         0b000 => Ok(Instruction::Beq(BType(i))),
+        0b001 => Ok(Instruction::Bne(BType(i))),
+        0b100 => Ok(Instruction::Blt(BType(i))),
+        0b101 => Ok(Instruction::Bge(BType(i))),
+        0b110 => Ok(Instruction::Bltu(BType(i))),
+        0b111 => Ok(Instruction::Bgeu(BType(i))),
         _ => Err(DecodingError::Unknown),
     }
 }
@@ -160,8 +191,36 @@ fn decode_system(i: u32) -> DecodingResult {
     match i {
         // Environment Call and Breakpoint
         0b0000_0000_0000_0000_0000_0000_0111_0011 => Ok(Instruction::Ecall(IType(i))),
+        0b0000_0000_0001_0000_0000_0000_0111_0011 => Ok(Instruction::Ebreak(IType(i))),
         _ => Err(DecodingError::Unknown),
     }
+}
+
+#[inline(always)]
+fn decode_amo(i: u32) -> DecodingResult {
+    match (i >> 12) & 0b111 {
+        0b010 => decode_amo_rv32a(i),
+        // 0b011 => decode_amo_rv64a(i),
+        _ => Err(DecodingError::Unknown),
+    }
+}
+
+#[inline(always)]
+fn decode_amo_rv32a(i: u32) -> DecodingResult {
+  match (i >> 27) & 0b1111111 {
+    0b00001 => Ok(Instruction::Amoswapw(RType(i))),
+    0b00010 => Ok(Instruction::Lrw(RType(i))),
+    0b00011 => Ok(Instruction::Scw(RType(i))),
+    _ => Err(DecodingError::Unknown)
+  }
+}
+
+#[inline(always)]
+fn decode_fence(i: u32) -> DecodingResult {
+  match (i >> 12) & 0b111 {
+    0b000 => Ok(Instruction::Fence(IType(i))),
+    _ => Err(DecodingError::Unknown)
+  }
 }
 
 #[cfg(test)]
