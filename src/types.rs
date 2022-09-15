@@ -81,7 +81,7 @@ impl IType {
 
         let immediate = sign_shrink(immediate, 12);
 
-        Self((((((((immediate << 5) + rs1) << 3) + funct3) << 5) + rd) << 5) + opcode)
+        Self((((((((immediate << 5) + rs1) << 3) + funct3) << 5) + rd) << 7) + opcode)
     }
     pub fn imm(&self) -> i32 {
         sign_extend(self.0 >> 20, 12) as i32
