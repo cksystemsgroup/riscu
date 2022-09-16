@@ -88,7 +88,7 @@ pub fn decode(i: u32) -> DecodingResult {
             0b01011 => decode_amo(i),
             0b01100 => decode_op(i),
             0b01101 => Ok(Instruction::Lui(UType(i))),
-            0b01110 => Err(DecodingError::Unknown), // op32 instruction
+            0b01110 => decode_op32(i), // op32 instruction
             0b01111 => Err(DecodingError::Reserved), // 64bit instruction
 
             0b10000 => Err(DecodingError::Unimplemented), // MADD
@@ -133,7 +133,13 @@ fn decode_load(i: u32) -> DecodingResult {
 fn decode_op_imm(i: u32) -> DecodingResult {
     match (i >> 12) & 0b111 {
         0b000 => Ok(Instruction::Addi(IType(i))),
+        0b010 => Ok(Instruction::Slti(IType(i))),
+        0b011 => Ok(Instruction::Sltiu(IType(i))),
+        0b100 => Ok(Instruction::Xori(IType(i))),
+        0b110 => Ok(Instruction::Ori(IType(i))),
         0b111 => Ok(Instruction::Andi(IType(i))),
+        0b001 => Ok(Instruction::Slli(IType(i))),
+        0b101 => Ok(Instruction::SrliSrai(IType(i))),
         _ => Err(DecodingError::Unknown),
     }
 }
@@ -145,8 +151,11 @@ fn decode_auipc(i: u32) -> DecodingResult {
 
 #[inline(always)]
 fn decode_op_imm32(i: u32) -> DecodingResult {
-    match (i >> 12) & 0b111 {
-        0b000 => Ok(Instruction::Addiw(IType(i))),
+    match (i >> 25, (i >> 12) & 0b111) {
+        (_, 0b000) => Ok(Instruction::Addiw(IType(i))),
+        (0b0000000, 0b001) => Ok(Instruction::Slliw(RType(i))),
+        (0b0000000, 0b101) => Ok(Instruction::Srliw(RType(i))),
+        (0b0100000, 0b101) => Ok(Instruction::Sraiw(RType(i))),
         _ => Err(DecodingError::Unknown),
     }
 }
@@ -167,10 +176,39 @@ fn decode_op(i: u32) -> DecodingResult {
     match (i >> 25, (i >> 12) & 0b111) {
         (0b0000000, 0b000) => Ok(Instruction::Add(RType(i))),
         (0b0100000, 0b000) => Ok(Instruction::Sub(RType(i))),
+        (0b0000000, 0b001) => Ok(Instruction::Sll(RType(i))),
+        (0b0000000, 0b010) => Ok(Instruction::Slt(RType(i))),
         (0b0000000, 0b011) => Ok(Instruction::Sltu(RType(i))),
+        (0b0000000, 0b100) => Ok(Instruction::Xor(RType(i))),
+        (0b0000000, 0b101) => Ok(Instruction::Srl(RType(i))),
+        (0b0100000, 0b101) => Ok(Instruction::Sra(RType(i))),
+        (0b0000000, 0b110) => Ok(Instruction::Or(RType(i))),
+        (0b0000000, 0b111) => Ok(Instruction::And(RType(i))),
         (0b0000001, 0b000) => Ok(Instruction::Mul(RType(i))),
+        (0b0000001, 0b001) => Ok(Instruction::Mulh(RType(i))),
+        (0b0000001, 0b010) => Ok(Instruction::Mulhsu(RType(i))),
+        (0b0000001, 0b011) => Ok(Instruction::Mulhu(RType(i))),
+        (0b0000001, 0b100) => Ok(Instruction::Div(RType(i))),
         (0b0000001, 0b101) => Ok(Instruction::Divu(RType(i))),
+        (0b0000001, 0b110) => Ok(Instruction::Rem(RType(i))),
         (0b0000001, 0b111) => Ok(Instruction::Remu(RType(i))),
+        _ => Err(DecodingError::Unknown),
+    }
+}
+
+#[inline(always)]
+fn decode_op32(i: u32) -> DecodingResult {
+    match (i >> 25, (i >> 12) & 0b111) {
+        (0b0000000, 0b000) => Ok(Instruction::Addw(RType(i))),
+        (0b0100000, 0b000) => Ok(Instruction::Subw(RType(i))),
+        (0b0000000, 0b001) => Ok(Instruction::Sllw(RType(i))),
+        (0b0000000, 0b101) => Ok(Instruction::Srlw(RType(i))),
+        (0b0100000, 0b101) => Ok(Instruction::Sraw(RType(i))),
+        (0b0000001, 0b000) => Ok(Instruction::Mulw(RType(i))),
+        (0b0000001, 0b100) => Ok(Instruction::Divw(RType(i))),
+        (0b0000001, 0b101) => Ok(Instruction::Divuw(RType(i))),
+        (0b0000001, 0b110) => Ok(Instruction::Remw(RType(i))),
+        (0b0000001, 0b111) => Ok(Instruction::Remuw(RType(i))),
         _ => Err(DecodingError::Unknown),
     }
 }
@@ -198,21 +236,32 @@ fn decode_system(i: u32) -> DecodingResult {
 
 #[inline(always)]
 fn decode_amo(i: u32) -> DecodingResult {
-    match (i >> 12) & 0b111 {
-        0b010 => decode_amo_rv32a(i),
-        // 0b011 => decode_amo_rv64a(i),
+    // bits 25 and 26 are "aq" and "rl", respectively
+    match (i >> 27, (i >> 12) & 0b111) {
+        (0b00010, 0b010) => Ok(Instruction::Lrw(RType(i))),
+        (0b00011, 0b010) => Ok(Instruction::Scw(RType(i))),
+        (0b00001, 0b010) => Ok(Instruction::Amoswapw(RType(i))),
+        (0b00000, 0b010) => Ok(Instruction::Amoaddw(RType(i))),
+        (0b00100, 0b010) => Ok(Instruction::Amoxorw(RType(i))),
+        (0b01100, 0b010) => Ok(Instruction::Amoandw(RType(i))),
+        (0b01000, 0b010) => Ok(Instruction::Amoorw(RType(i))),
+        (0b10000, 0b010) => Ok(Instruction::Amominw(RType(i))),
+        (0b10100, 0b010) => Ok(Instruction::Amomaxw(RType(i))),
+        (0b11000, 0b010) => Ok(Instruction::Amominuw(RType(i))),
+        (0b11100, 0b010) => Ok(Instruction::Amomaxuw(RType(i))),
+        (0b00010, 0b011) => Ok(Instruction::Lrd(RType(i))),
+        (0b00011, 0b011) => Ok(Instruction::Scd(RType(i))),
+        (0b00001, 0b011) => Ok(Instruction::Amoswapd(RType(i))),
+        (0b00000, 0b011) => Ok(Instruction::Amoaddd(RType(i))),
+        (0b00100, 0b011) => Ok(Instruction::Amoxord(RType(i))),
+        (0b01100, 0b011) => Ok(Instruction::Amoandd(RType(i))),
+        (0b01000, 0b011) => Ok(Instruction::Amoord(RType(i))),
+        (0b10000, 0b011) => Ok(Instruction::Amomind(RType(i))),
+        (0b10100, 0b011) => Ok(Instruction::Amomaxd(RType(i))),
+        (0b11000, 0b011) => Ok(Instruction::Amominud(RType(i))),
+        (0b11100, 0b011) => Ok(Instruction::Amomaxud(RType(i))),
         _ => Err(DecodingError::Unknown),
     }
-}
-
-#[inline(always)]
-fn decode_amo_rv32a(i: u32) -> DecodingResult {
-  match (i >> 27) & 0b1111111 {
-    0b00001 => Ok(Instruction::Amoswapw(RType(i))),
-    0b00010 => Ok(Instruction::Lrw(RType(i))),
-    0b00011 => Ok(Instruction::Scw(RType(i))),
-    _ => Err(DecodingError::Unknown)
-  }
 }
 
 #[inline(always)]
