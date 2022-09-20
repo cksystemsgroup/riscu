@@ -49,7 +49,8 @@ pub enum Instruction {
     Ori(IType),
     Andi(IType),
     Slli(IType),
-    SrliSrai(IType),
+    Srli(IType),
+    Srai(IType),
 
     // OP-imm32
     Addiw(IType),
@@ -331,8 +332,11 @@ impl Instruction {
     pub fn new_slli(rd: Register, rs1: Register, immediate: i32) -> Instruction {
         Instruction::Slli(IType::new(immediate, F3_SLLI, OP_IMM, rd, rs1))
     }
-    pub fn new_srli_srai(rd: Register, rs1: Register, immediate: i32) -> Instruction {
-        Instruction::SrliSrai(IType::new(immediate, F3_SRLI_SRAI, OP_IMM, rd, rs1))
+    pub fn new_srli(rd: Register, rs1: Register, immediate: i32) -> Instruction {
+        Instruction::Srli(IType::new(immediate | (F7_SRL_SRLW << 25) as i32, F3_SRLI_SRAI, OP_IMM, rd, rs1))
+    }
+    pub fn new_srai(rd: Register, rs1: Register, immediate: i32) -> Instruction {
+        Instruction::Srai(IType::new(immediate | (F7_SRA_SRAW << 25) as i32, F3_SRLI_SRAI, OP_IMM, rd, rs1))
     }
     pub fn new_addiw(rd: Register, rs1: Register, immediate: i32) -> Instruction {
         Instruction::Addiw(IType::new(immediate, F3_ADDIW, OP_IMM32, rd, rs1))

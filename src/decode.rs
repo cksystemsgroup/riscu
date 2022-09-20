@@ -131,15 +131,16 @@ fn decode_load(i: u32) -> DecodingResult {
 
 #[inline(always)]
 fn decode_op_imm(i: u32) -> DecodingResult {
-    match (i >> 12) & 0b111 {
-        0b000 => Ok(Instruction::Addi(IType(i))),
-        0b010 => Ok(Instruction::Slti(IType(i))),
-        0b011 => Ok(Instruction::Sltiu(IType(i))),
-        0b100 => Ok(Instruction::Xori(IType(i))),
-        0b110 => Ok(Instruction::Ori(IType(i))),
-        0b111 => Ok(Instruction::Andi(IType(i))),
-        0b001 => Ok(Instruction::Slli(IType(i))),
-        0b101 => Ok(Instruction::SrliSrai(IType(i))),
+    match (i >> 26, (i >> 12) & 0b111) {
+        (_, 0b000) => Ok(Instruction::Addi(IType(i))),
+        (_, 0b010) => Ok(Instruction::Slti(IType(i))),
+        (_, 0b011) => Ok(Instruction::Sltiu(IType(i))),
+        (_, 0b100) => Ok(Instruction::Xori(IType(i))),
+        (_, 0b110) => Ok(Instruction::Ori(IType(i))),
+        (_, 0b111) => Ok(Instruction::Andi(IType(i))),
+        (0b000000, 0b001) => Ok(Instruction::Slli(IType(i))),
+        (0b000000, 0b101) => Ok(Instruction::Srli(IType(i))),
+        (0b010000, 0b101) => Ok(Instruction::Srai(IType(i))),
         _ => Err(DecodingError::Unknown),
     }
 }
