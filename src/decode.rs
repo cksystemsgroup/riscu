@@ -153,9 +153,9 @@ fn decode_auipc(i: u32) -> DecodingResult {
 fn decode_op_imm32(i: u32) -> DecodingResult {
     match (i >> 25, (i >> 12) & 0b111) {
         (_, 0b000) => Ok(Instruction::Addiw(IType(i))),
-        (0b0000000, 0b001) => Ok(Instruction::Slliw(RType(i))),
-        (0b0000000, 0b101) => Ok(Instruction::Srliw(RType(i))),
-        (0b0100000, 0b101) => Ok(Instruction::Sraiw(RType(i))),
+        (0b0000000, 0b001) => Ok(Instruction::Slliw(IType(i))),
+        (0b0000000, 0b101) => Ok(Instruction::Srliw(IType(i))),
+        (0b0100000, 0b101) => Ok(Instruction::Sraiw(IType(i))),
         _ => Err(DecodingError::Unknown),
     }
 }

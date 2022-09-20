@@ -53,9 +53,9 @@ pub enum Instruction {
 
     // OP-imm32
     Addiw(IType),
-    Slliw(RType),
-    Srliw(RType),
-    Sraiw(RType),
+    Slliw(IType),
+    Srliw(IType),
+    Sraiw(IType),
 
     // OP
     Add(RType),
@@ -210,8 +210,6 @@ const F7_DIV_DIVW: u32 = 1; // 0000001
 const F7_DIVU_DIVUW: u32 = 1; // 0000001
 const F7_REM_REMW: u32 = 1; // 0000001
 const F7_REMU_REMUW: u32 = 1; // 0000001
-const F7_SLLIW_SRLIW: u32 = 0; // 0000000
-const F7_SRAIW: u32 = 0; // 0100000
 const F7_LRW_LRD: u32 = 2; // 00010 aq rl
 const F7_SCW_SCD: u32 = 3; // 00011 aq rl
 const F7_AMOSWAPW_AMOSWAPD: u32 = 3; // 00001 aq rl
@@ -339,14 +337,14 @@ impl Instruction {
     pub fn new_addiw(rd: Register, rs1: Register, immediate: i32) -> Instruction {
         Instruction::Addiw(IType::new(immediate, F3_ADDIW, OP_IMM32, rd, rs1))
     }
-    pub fn new_slliw(rd: Register, rs1: Register, rs2: Register) -> Instruction {
-        Instruction::Slliw(RType::new(F7_SLLIW_SRLIW, F3_SLLIW, OP_IMM32, rs1, rs2, rd))
+    pub fn new_slliw(rd: Register, rs1: Register, immediate: i32) -> Instruction {
+        Instruction::Slliw(IType::new(immediate, F3_SLLIW, OP_IMM32, rd, rs1))
     }
-    pub fn new_srliw(rd: Register, rs1: Register, rs2: Register) -> Instruction {
-        Instruction::Srliw(RType::new(F7_SLLIW_SRLIW, F3_SRLIW, OP_IMM32, rs1, rs2, rd))
+    pub fn new_srliw(rd: Register, rs1: Register, immediate: i32) -> Instruction {
+        Instruction::Srliw(IType::new(immediate, F3_SRLIW, OP_IMM32, rd, rs1))
     }
-    pub fn new_sraiw(rd: Register, rs1: Register, rs2: Register) -> Instruction {
-      Instruction::Sraiw(RType::new(F7_SRAIW, F3_SRAIW, OP_IMM32, rs1, rs2, rd))
+    pub fn new_sraiw(rd: Register, rs1: Register, immediate: i32) -> Instruction {
+      Instruction::Sraiw(IType::new(immediate, F3_SRAIW, OP_IMM32, rd, rs1))
     }
     pub fn new_lb(rd: Register, rs1: Register, immediate: i32) -> Instruction {
         Instruction::Lb(IType::new(immediate, F3_LB, OP_LD, rd, rs1))
