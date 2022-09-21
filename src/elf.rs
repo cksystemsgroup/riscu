@@ -22,8 +22,8 @@ pub struct Program {
 impl Program {
     pub fn decode(&self) -> Result<DecodedProgram, RiscuError> {
         copy_and_decode_segments([
-            (self.code.address, self.code.content.as_slice()),
-            (self.data.address, self.data.content.as_slice()),
+            (self.code.address, self.code.content.as_slice(), 0),
+            (self.data.address, self.data.content.as_slice(), 0),
         ])
     }
 }
@@ -66,7 +66,7 @@ where
 fn load_elf_file<P, F, R>(object_file: P, collect: F) -> Result<R, RiscuError>
 where
     P: AsRef<Path>,
-    F: Fn([(u64, &[u8]); 2]) -> Result<R, RiscuError>,
+    F: Fn([(u64, &[u8], usize); 2]) -> Result<R, RiscuError>,
     R: Sized,
 {
     fs::read(object_file)
@@ -78,7 +78,7 @@ where
         })
 }
 
-fn extract_program_info<'a>(raw: &'a [u8], elf: &Elf) -> Result<[(u64, &'a [u8]); 2], RiscuError> {
+fn extract_program_info<'a>(raw: &'a [u8], elf: &Elf) -> Result<[(u64, &'a [u8], usize); 2], RiscuError> {
     if elf.is_lib || !elf.is_64 || !elf.little_endian {
         return Err(RiscuError::InvalidRiscu(
             "has to be an executable, 64bit, static, little endian binary",
@@ -143,6 +143,7 @@ fn extract_program_info<'a>(raw: &'a [u8], elf: &Elf) -> Result<[(u64, &'a [u8])
 
     let code_start;
     let code_segment;
+    let code_padding;
     
     if code_segment_header.p_offset == 0 {
       info!("p_offset in program header not set (i.e., no Selfie-generated RISC-U executable). Falling back to section header (i.e., assuming a gcc-generated RISC-V executable).");
@@ -161,6 +162,7 @@ fn extract_program_info<'a>(raw: &'a [u8], elf: &Elf) -> Result<[(u64, &'a [u8])
 
       code_start = code_section_header.sh_addr;
       code_segment = &raw[code_section_header.file_range()];
+      code_padding = 0;
       
       info!("File range of code segment: {:#010x?}", code_section_header.file_range());
     } else {
@@ -168,33 +170,36 @@ fn extract_program_info<'a>(raw: &'a [u8], elf: &Elf) -> Result<[(u64, &'a [u8])
 
       code_start = code_segment_header.p_vaddr;
       code_segment = &raw[code_segment_header.file_range()];
+      code_padding = (code_segment_header.p_memsz - code_segment_header.p_filesz) as usize;
 
       info!("File range of code segment: {:#010x?}", code_segment_header.file_range());
     }
 
     let data_start = data_segment_header.p_vaddr;
     let data_segment = &raw[data_segment_header.file_range()];
+    let data_padding = (data_segment_header.p_memsz - data_segment_header.p_filesz) as usize;
 
     info!("Code start: {:#010x}", code_start);
     info!("Data start: {:#010x}", data_start);
 
-    Ok([(code_start, code_segment), (data_start, data_segment)])
+    Ok([(code_start, code_segment, code_padding), (data_start, data_segment, data_padding)])
 }
 
-fn copy_segments(segments: [(u64, &[u8]); 2]) -> Program {
+fn copy_segments(segments: [(u64, &[u8], usize); 2]) -> Program {
     Program {
         code: ProgramSegment {
             address: segments[0].0,
-            content: Vec::from(segments[0].1),
+            content: [segments[0].1.to_vec(), vec![0; segments[0].2]].concat(),
         },
         data: ProgramSegment {
             address: segments[1].0,
-            content: Vec::from(segments[1].1),
+            content: [segments[1].1.to_vec(), vec![0; segments[1].2]].concat(),
         },
     }
 }
 
-fn copy_and_decode_segments(segments: [(u64, &[u8]); 2]) -> Result<DecodedProgram, RiscuError> {
+// TODO: Handle segment padding in this collector function.
+fn copy_and_decode_segments(segments: [(u64, &[u8], usize); 2]) -> Result<DecodedProgram, RiscuError> {
     let code = ProgramSegment {
         address: segments[0].0,
         content: segments[0]
