@@ -2,10 +2,10 @@
 
 use crate::{decode, DecodingError, Instruction};
 use byteorder::{ByteOrder, LittleEndian};
-use goblin::elf::{program_header::PT_LOAD, Elf, section_header::SHT_PROGBITS};
+use goblin::elf::{program_header::PT_LOAD, section_header::SHT_PROGBITS, Elf};
+use log::info;
 use std::{fs, mem::size_of, path::Path};
 use thiserror::Error;
-use log::info;
 
 #[derive(Clone, Debug)]
 pub struct ProgramSegment<T> {
@@ -78,7 +78,10 @@ where
         })
 }
 
-fn extract_program_info<'a>(raw: &'a [u8], elf: &Elf) -> Result<[(u64, &'a [u8], usize); 2], RiscuError> {
+fn extract_program_info<'a>(
+    raw: &'a [u8],
+    elf: &Elf,
+) -> Result<[(u64, &'a [u8], usize); 2], RiscuError> {
     if elf.is_lib || !elf.is_64 || !elf.little_endian {
         return Err(RiscuError::InvalidRiscu(
             "has to be an executable, 64bit, static, little endian binary",
@@ -103,10 +106,18 @@ fn extract_program_info<'a>(raw: &'a [u8], elf: &Elf) -> Result<[(u64, &'a [u8],
     //   print!("{:?} {:#010x?}\n", ph, ph.file_range());
     // }
 
-    info!("Binary has {} segments according to program header table (e_phnum)", elf.header.e_phnum);
+    info!(
+        "Binary has {} segments according to program header table (e_phnum)",
+        elf.header.e_phnum
+    );
 
-    if elf.header.e_phnum < 2 || ph_iter.clone().count() < 2 || usize::from(elf.header.e_phnum) < ph_iter.clone().count() {
-        return Err(RiscuError::InvalidRiscu("must have at least 2 program segments", ));
+    if elf.header.e_phnum < 2
+        || ph_iter.clone().count() < 2
+        || usize::from(elf.header.e_phnum) < ph_iter.clone().count()
+    {
+        return Err(RiscuError::InvalidRiscu(
+            "must have at least 2 program segments",
+        ));
     }
 
     // println!("{:#?}", ph_iter
@@ -144,35 +155,43 @@ fn extract_program_info<'a>(raw: &'a [u8], elf: &Elf) -> Result<[(u64, &'a [u8],
     let code_start;
     let code_segment;
     let code_padding;
-    
+
     if code_segment_header.p_offset == 0 {
-      info!("p_offset in program header not set (i.e., no Selfie-generated RISC-U executable). Falling back to section header (i.e., assuming a gcc-generated RISC-V executable).");
+        info!("p_offset in program header not set (i.e., no Selfie-generated RISC-U executable). Falling back to section header (i.e., assuming a gcc-generated RISC-V executable).");
 
-      let code_section_header = match sh_iter
-          .clone()
-          .find(|sh| !sh.is_writable() && sh.is_executable())
-      {
-          Some(segment) => segment,
-          None => {
-              return Err(RiscuError::InvalidRiscu(
-                  "code section (executable) is missing",
-              ))
-          }
-      };
+        let code_section_header = match sh_iter
+            .clone()
+            .find(|sh| !sh.is_writable() && sh.is_executable())
+        {
+            Some(segment) => segment,
+            None => {
+                return Err(RiscuError::InvalidRiscu(
+                    "code section (executable) is missing",
+                ))
+            }
+        };
 
-      code_start = code_section_header.sh_addr;
-      code_segment = &raw[code_section_header.file_range()];
-      code_padding = 0;
-      
-      info!("File range of code segment: {:#010x?}", code_section_header.file_range());
+        code_start = code_section_header.sh_addr;
+        code_segment = &raw[code_section_header.file_range()];
+        code_padding = 0;
+
+        info!(
+            "File range of code segment: {:#010x?}",
+            code_section_header.file_range()
+        );
     } else {
-      info!("p_offset in program header set (i.e., assuming a Selfie-generated RISC-U executable).");
+        info!(
+            "p_offset in program header set (i.e., assuming a Selfie-generated RISC-U executable)."
+        );
 
-      code_start = code_segment_header.p_vaddr;
-      code_segment = &raw[code_segment_header.file_range()];
-      code_padding = (code_segment_header.p_memsz - code_segment_header.p_filesz) as usize;
+        code_start = code_segment_header.p_vaddr;
+        code_segment = &raw[code_segment_header.file_range()];
+        code_padding = (code_segment_header.p_memsz - code_segment_header.p_filesz) as usize;
 
-      info!("File range of code segment: {:#010x?}", code_segment_header.file_range());
+        info!(
+            "File range of code segment: {:#010x?}",
+            code_segment_header.file_range()
+        );
     }
 
     let data_start = data_segment_header.p_vaddr;
@@ -182,7 +201,10 @@ fn extract_program_info<'a>(raw: &'a [u8], elf: &Elf) -> Result<[(u64, &'a [u8],
     info!("Code start: {:#010x}", code_start);
     info!("Data start: {:#010x}", data_start);
 
-    Ok([(code_start, code_segment, code_padding), (data_start, data_segment, data_padding)])
+    Ok([
+        (code_start, code_segment, code_padding),
+        (data_start, data_segment, data_padding),
+    ])
 }
 
 fn copy_segments(segments: [(u64, &[u8], usize); 2]) -> Program {
@@ -199,7 +221,9 @@ fn copy_segments(segments: [(u64, &[u8], usize); 2]) -> Program {
 }
 
 // TODO: Handle segment padding in this collector function.
-fn copy_and_decode_segments(segments: [(u64, &[u8], usize); 2]) -> Result<DecodedProgram, RiscuError> {
+fn copy_and_decode_segments(
+    segments: [(u64, &[u8], usize); 2],
+) -> Result<DecodedProgram, RiscuError> {
     let code = ProgramSegment {
         address: segments[0].0,
         content: segments[0]

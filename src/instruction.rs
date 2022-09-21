@@ -121,14 +121,11 @@ pub enum Instruction {
 
 // opcodes
 const OP_LD: u32 = 3; // 0000011, I format (LD)
-// 0010011, I format (ADDI, SLTI, SLTIU, XORI, ORI, ANDI, SLLI, SRLI, SRAI, NOP)
-const OP_IMM: u32 = 19;
+const OP_IMM: u32 = 19; // 0010011, I format (ADDI, SLTI, SLTIU, XORI, ORI, ANDI, SLLI, SRLI, SRAI, NOP)
 const OP_IMM32: u32 = 27; // 0011011, I format (ADDIW, SLLIW, SRLIW, SRAIW)
 const OP_SD: u32 = 35; // 0100011, S format (SD)
 const OP_OP: u32 = 51; // 0110011, R format (ADD, SUB, MUL, DIVU, REMU, SLTU)
-// 0111011, R format (ADDW, SUBW, SSLW, SRLW, SRAW, MULW, DIVW, DIVUW, REMW
-// REMUW)
-const OP_OP32: u32 = 59;
+const OP_OP32: u32 = 59; // 0111011, R format (ADDW, SUBW, SSLW, SRLW, SRAW, MULW, DIVW, DIVUW, REMW, REMUW)
 const OP_LUI: u32 = 55; // 0110111, U format (LUI)
 const OP_AUIPC: u32 = 23; //0010111, U format (AUIPC)
 const OP_BRANCH: u32 = 99; // 1100011, B format (BEQ)
@@ -273,13 +270,27 @@ impl Instruction {
         Instruction::Div(RType::new(F7_DIV_DIVW, F3_DIV_DIVW, OP_OP, rs1, rs2, rd))
     }
     pub fn new_divu(rd: Register, rs1: Register, rs2: Register) -> Instruction {
-        Instruction::Divu(RType::new(F7_DIVU_DIVUW, F3_DIVU_DIVUW, OP_OP, rs1, rs2, rd))
+        Instruction::Divu(RType::new(
+            F7_DIVU_DIVUW,
+            F3_DIVU_DIVUW,
+            OP_OP,
+            rs1,
+            rs2,
+            rd,
+        ))
     }
     pub fn new_rem(rd: Register, rs1: Register, rs2: Register) -> Instruction {
         Instruction::Rem(RType::new(F7_REM_REMW, F3_REM_REMW, OP_OP, rs1, rs2, rd))
     }
     pub fn new_remu(rd: Register, rs1: Register, rs2: Register) -> Instruction {
-        Instruction::Remu(RType::new(F7_REMU_REMUW, F3_REMU_REMUW, OP_OP, rs1, rs2, rd))
+        Instruction::Remu(RType::new(
+            F7_REMU_REMUW,
+            F3_REMU_REMUW,
+            OP_OP,
+            rs1,
+            rs2,
+            rd,
+        ))
     }
     pub fn new_addw(rd: Register, rs1: Register, rs2: Register) -> Instruction {
         Instruction::Addw(RType::new(F7_ADD_ADDW, F3_ADD_ADDW, OP_OP32, rs1, rs2, rd))
@@ -303,13 +314,27 @@ impl Instruction {
         Instruction::Divw(RType::new(F7_DIV_DIVW, F3_DIV_DIVW, OP_OP32, rs1, rs2, rd))
     }
     pub fn new_divuw(rd: Register, rs1: Register, rs2: Register) -> Instruction {
-        Instruction::Divuw(RType::new(F7_DIVU_DIVUW, F3_DIVU_DIVUW, OP_OP32, rs1, rs2, rd))
+        Instruction::Divuw(RType::new(
+            F7_DIVU_DIVUW,
+            F3_DIVU_DIVUW,
+            OP_OP32,
+            rs1,
+            rs2,
+            rd,
+        ))
     }
     pub fn new_remw(rd: Register, rs1: Register, rs2: Register) -> Instruction {
         Instruction::Remw(RType::new(F7_REM_REMW, F3_REM_REMW, OP_OP32, rs1, rs2, rd))
     }
     pub fn new_remuw(rd: Register, rs1: Register, rs2: Register) -> Instruction {
-        Instruction::Remuw(RType::new(F7_REMU_REMUW, F3_REMU_REMUW, OP_OP32, rs1, rs2, rd))
+        Instruction::Remuw(RType::new(
+            F7_REMU_REMUW,
+            F3_REMU_REMUW,
+            OP_OP32,
+            rs1,
+            rs2,
+            rd,
+        ))
     }
     pub fn new_addi(rd: Register, rs1: Register, immediate: i32) -> Instruction {
         Instruction::Addi(IType::new(immediate, F3_ADDI, OP_IMM, rd, rs1))
@@ -333,10 +358,22 @@ impl Instruction {
         Instruction::Slli(IType::new(immediate, F3_SLLI, OP_IMM, rd, rs1))
     }
     pub fn new_srli(rd: Register, rs1: Register, immediate: i32) -> Instruction {
-        Instruction::Srli(IType::new(immediate | (F7_SRL_SRLW << 25) as i32, F3_SRLI_SRAI, OP_IMM, rd, rs1))
+        Instruction::Srli(IType::new(
+            immediate | (F7_SRL_SRLW << 25) as i32,
+            F3_SRLI_SRAI,
+            OP_IMM,
+            rd,
+            rs1,
+        ))
     }
     pub fn new_srai(rd: Register, rs1: Register, immediate: i32) -> Instruction {
-        Instruction::Srai(IType::new(immediate | (F7_SRA_SRAW << 25) as i32, F3_SRLI_SRAI, OP_IMM, rd, rs1))
+        Instruction::Srai(IType::new(
+            immediate | (F7_SRA_SRAW << 25) as i32,
+            F3_SRLI_SRAI,
+            OP_IMM,
+            rd,
+            rs1,
+        ))
     }
     pub fn new_addiw(rd: Register, rs1: Register, immediate: i32) -> Instruction {
         Instruction::Addiw(IType::new(immediate, F3_ADDIW, OP_IMM32, rd, rs1))
@@ -348,7 +385,7 @@ impl Instruction {
         Instruction::Srliw(IType::new(immediate, F3_SRLIW, OP_IMM32, rd, rs1))
     }
     pub fn new_sraiw(rd: Register, rs1: Register, immediate: i32) -> Instruction {
-      Instruction::Sraiw(IType::new(immediate, F3_SRAIW, OP_IMM32, rd, rs1))
+        Instruction::Sraiw(IType::new(immediate, F3_SRAIW, OP_IMM32, rd, rs1))
     }
     pub fn new_lb(rd: Register, rs1: Register, immediate: i32) -> Instruction {
         Instruction::Lb(IType::new(immediate, F3_LB, OP_LD, rd, rs1))
@@ -438,31 +475,87 @@ impl Instruction {
         Instruction::Scw(RType::new(F7_SCW_SCD, F3_AMO32, OP_AMO, rs1, rs2, rd))
     }
     pub fn new_amoswapw(rd: Register, rs1: Register, rs2: Register) -> Instruction {
-        Instruction::Amoswapw(RType::new(F7_AMOSWAPW_AMOSWAPD, F3_AMO32, OP_AMO, rs1, rs2, rd))
+        Instruction::Amoswapw(RType::new(
+            F7_AMOSWAPW_AMOSWAPD,
+            F3_AMO32,
+            OP_AMO,
+            rs1,
+            rs2,
+            rd,
+        ))
     }
     pub fn new_amoaddw(rd: Register, rs1: Register, rs2: Register) -> Instruction {
-        Instruction::Amoaddw(RType::new(F7_AMOADDW_AMOADDD, F3_AMO32, OP_AMO, rs1, rs2, rd))
+        Instruction::Amoaddw(RType::new(
+            F7_AMOADDW_AMOADDD,
+            F3_AMO32,
+            OP_AMO,
+            rs1,
+            rs2,
+            rd,
+        ))
     }
     pub fn new_amoxorw(rd: Register, rs1: Register, rs2: Register) -> Instruction {
-        Instruction::Amoxorw(RType::new(F7_AMOXORW_AMOXORD, F3_AMO32, OP_AMO, rs1, rs2, rd))
+        Instruction::Amoxorw(RType::new(
+            F7_AMOXORW_AMOXORD,
+            F3_AMO32,
+            OP_AMO,
+            rs1,
+            rs2,
+            rd,
+        ))
     }
     pub fn new_amoandw(rd: Register, rs1: Register, rs2: Register) -> Instruction {
-      Instruction::Amoandw(RType::new(F7_AMOANDW_AMOANDD, F3_AMO32, OP_AMO, rs1, rs2, rd))
+        Instruction::Amoandw(RType::new(
+            F7_AMOANDW_AMOANDD,
+            F3_AMO32,
+            OP_AMO,
+            rs1,
+            rs2,
+            rd,
+        ))
     }
     pub fn new_amoorw(rd: Register, rs1: Register, rs2: Register) -> Instruction {
-      Instruction::Amoorw(RType::new(F7_AMOORW_AMOORD, F3_AMO32, OP_AMO, rs1, rs2, rd))
+        Instruction::Amoorw(RType::new(F7_AMOORW_AMOORD, F3_AMO32, OP_AMO, rs1, rs2, rd))
     }
     pub fn new_amominw(rd: Register, rs1: Register, rs2: Register) -> Instruction {
-      Instruction::Amominw(RType::new(F7_AMOMINW_AMOMIND, F3_AMO32, OP_AMO, rs1, rs2, rd))
+        Instruction::Amominw(RType::new(
+            F7_AMOMINW_AMOMIND,
+            F3_AMO32,
+            OP_AMO,
+            rs1,
+            rs2,
+            rd,
+        ))
     }
     pub fn new_amomaxw(rd: Register, rs1: Register, rs2: Register) -> Instruction {
-      Instruction::Amomaxw(RType::new(F7_AMOMAXW_AMOMAXD, F3_AMO32, OP_AMO, rs1, rs2, rd))
+        Instruction::Amomaxw(RType::new(
+            F7_AMOMAXW_AMOMAXD,
+            F3_AMO32,
+            OP_AMO,
+            rs1,
+            rs2,
+            rd,
+        ))
     }
     pub fn new_amominuw(rd: Register, rs1: Register, rs2: Register) -> Instruction {
-      Instruction::Amominuw(RType::new(F7_AMOMINUW_AMOMINUD, F3_AMO32, OP_AMO, rs1, rs2, rd))
+        Instruction::Amominuw(RType::new(
+            F7_AMOMINUW_AMOMINUD,
+            F3_AMO32,
+            OP_AMO,
+            rs1,
+            rs2,
+            rd,
+        ))
     }
     pub fn new_amomaxuw(rd: Register, rs1: Register, rs2: Register) -> Instruction {
-      Instruction::Amomaxuw(RType::new(F7_AMOMAXUW_AMOMAXUD, F3_AMO32, OP_AMO, rs1, rs2, rd))
+        Instruction::Amomaxuw(RType::new(
+            F7_AMOMAXUW_AMOMAXUD,
+            F3_AMO32,
+            OP_AMO,
+            rs1,
+            rs2,
+            rd,
+        ))
     }
     pub fn new_lrd(rd: Register, rs1: Register, rs2: Register) -> Instruction {
         Instruction::Lrd(RType::new(F7_LRW_LRD, F3_AMO64, OP_AMO, rs1, rs2, rd))
@@ -471,31 +564,87 @@ impl Instruction {
         Instruction::Scd(RType::new(F7_SCW_SCD, F3_AMO64, OP_AMO, rs1, rs2, rd))
     }
     pub fn new_amoswapd(rd: Register, rs1: Register, rs2: Register) -> Instruction {
-        Instruction::Amoswapd(RType::new(F7_AMOSWAPW_AMOSWAPD, F3_AMO64, OP_AMO, rs1, rs2, rd))
+        Instruction::Amoswapd(RType::new(
+            F7_AMOSWAPW_AMOSWAPD,
+            F3_AMO64,
+            OP_AMO,
+            rs1,
+            rs2,
+            rd,
+        ))
     }
     pub fn new_amoaddd(rd: Register, rs1: Register, rs2: Register) -> Instruction {
-        Instruction::Amoaddd(RType::new(F7_AMOADDW_AMOADDD, F3_AMO64, OP_AMO, rs1, rs2, rd))
+        Instruction::Amoaddd(RType::new(
+            F7_AMOADDW_AMOADDD,
+            F3_AMO64,
+            OP_AMO,
+            rs1,
+            rs2,
+            rd,
+        ))
     }
     pub fn new_amoxord(rd: Register, rs1: Register, rs2: Register) -> Instruction {
-        Instruction::Amoxord(RType::new(F7_AMOXORW_AMOXORD, F3_AMO64, OP_AMO, rs1, rs2, rd))
+        Instruction::Amoxord(RType::new(
+            F7_AMOXORW_AMOXORD,
+            F3_AMO64,
+            OP_AMO,
+            rs1,
+            rs2,
+            rd,
+        ))
     }
     pub fn new_amoandd(rd: Register, rs1: Register, rs2: Register) -> Instruction {
-      Instruction::Amoandd(RType::new(F7_AMOANDW_AMOANDD, F3_AMO64, OP_AMO, rs1, rs2, rd))
+        Instruction::Amoandd(RType::new(
+            F7_AMOANDW_AMOANDD,
+            F3_AMO64,
+            OP_AMO,
+            rs1,
+            rs2,
+            rd,
+        ))
     }
     pub fn new_amoord(rd: Register, rs1: Register, rs2: Register) -> Instruction {
-      Instruction::Amoord(RType::new(F7_AMOORW_AMOORD, F3_AMO64, OP_AMO, rs1, rs2, rd))
+        Instruction::Amoord(RType::new(F7_AMOORW_AMOORD, F3_AMO64, OP_AMO, rs1, rs2, rd))
     }
     pub fn new_amomind(rd: Register, rs1: Register, rs2: Register) -> Instruction {
-      Instruction::Amomind(RType::new(F7_AMOMINW_AMOMIND, F3_AMO64, OP_AMO, rs1, rs2, rd))
+        Instruction::Amomind(RType::new(
+            F7_AMOMINW_AMOMIND,
+            F3_AMO64,
+            OP_AMO,
+            rs1,
+            rs2,
+            rd,
+        ))
     }
     pub fn new_amomaxd(rd: Register, rs1: Register, rs2: Register) -> Instruction {
-      Instruction::Amomaxd(RType::new(F7_AMOMAXW_AMOMAXD, F3_AMO64, OP_AMO, rs1, rs2, rd))
+        Instruction::Amomaxd(RType::new(
+            F7_AMOMAXW_AMOMAXD,
+            F3_AMO64,
+            OP_AMO,
+            rs1,
+            rs2,
+            rd,
+        ))
     }
     pub fn new_amominud(rd: Register, rs1: Register, rs2: Register) -> Instruction {
-      Instruction::Amominud(RType::new(F7_AMOMINUW_AMOMINUD, F3_AMO64, OP_AMO, rs1, rs2, rd))
+        Instruction::Amominud(RType::new(
+            F7_AMOMINUW_AMOMINUD,
+            F3_AMO64,
+            OP_AMO,
+            rs1,
+            rs2,
+            rd,
+        ))
     }
     pub fn new_amomaxud(rd: Register, rs1: Register, rs2: Register) -> Instruction {
-      Instruction::Amomaxud(RType::new(F7_AMOMAXUW_AMOMAXUD, F3_AMO64, OP_AMO, rs1, rs2, rd))
+        Instruction::Amomaxud(RType::new(
+            F7_AMOMAXUW_AMOMAXUD,
+            F3_AMO64,
+            OP_AMO,
+            rs1,
+            rs2,
+            rd,
+        ))
     }
     pub fn new_fence(rd: Register, rs1: Register, immediate: i32) -> Instruction {
         // TODO: Revisit

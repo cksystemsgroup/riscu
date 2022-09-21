@@ -15,8 +15,8 @@
 // This module was modified by the Selfie authors.
 
 use crate::{types::*, Instruction};
-use thiserror::Error;
 use log::debug;
+use thiserror::Error;
 
 pub const INSTRUCTION_SIZE: usize = 4;
 pub const WORD_SIZE: usize = 8;
@@ -69,7 +69,13 @@ pub fn instruction_length(i: u16) -> usize {
 
 /// Decode the given instruction.
 pub fn decode(i: u32) -> DecodingResult {
-    debug!("opcode: {:#09b}, funct3: {:#05b}, funct7: {:#09b}; full instr.: {:#034b}", i & 0b1111111, (i >> 12) & 0b111, (i >> 25) & 0b1111111, i);
+    debug!(
+        "opcode: {:#09b}, funct3: {:#05b}, funct7: {:#09b}; full instr.: {:#034b}",
+        i & 0b1111111,
+        (i >> 12) & 0b111,
+        (i >> 25) & 0b1111111,
+        i
+    );
 
     match i & 0b11 {
         0b11 => match (i >> 2) & 0b11111 {
@@ -78,8 +84,8 @@ pub fn decode(i: u32) -> DecodingResult {
             0b00010 => Err(DecodingError::Custom),
             0b00011 => decode_fence(i), // misc mem instruction
             0b00100 => decode_op_imm(i),
-            0b00101 => decode_auipc(i), // aupic instruction
-            0b00110 => decode_op_imm32(i), // op imm32 instruction
+            0b00101 => decode_auipc(i),              // aupic instruction
+            0b00110 => decode_op_imm32(i),           // op imm32 instruction
             0b00111 => Err(DecodingError::Reserved), // 48bit instruction
 
             0b01000 => decode_store(i),
@@ -88,7 +94,7 @@ pub fn decode(i: u32) -> DecodingResult {
             0b01011 => decode_amo(i),
             0b01100 => decode_op(i),
             0b01101 => Ok(Instruction::Lui(UType(i))),
-            0b01110 => decode_op32(i), // op32 instruction
+            0b01110 => decode_op32(i),               // op32 instruction
             0b01111 => Err(DecodingError::Reserved), // 64bit instruction
 
             0b10000 => Err(DecodingError::Unimplemented), // MADD
@@ -267,10 +273,10 @@ fn decode_amo(i: u32) -> DecodingResult {
 
 #[inline(always)]
 fn decode_fence(i: u32) -> DecodingResult {
-  match (i >> 12) & 0b111 {
-    0b000 => Ok(Instruction::Fence(IType(i))),
-    _ => Err(DecodingError::Unknown)
-  }
+    match (i >> 12) & 0b111 {
+        0b000 => Ok(Instruction::Fence(IType(i))),
+        _ => Err(DecodingError::Unknown),
+    }
 }
 
 #[cfg(test)]
