@@ -57,8 +57,8 @@ impl From<u32> for Register {
     }
 }
 
-impl Into<u32> for Register {
-    fn into(self) -> u32 {
-        unsafe { core::mem::transmute(self) }
+impl From<Register> for u32 {
+    fn from(reg: Register) -> u32 {
+        unsafe { core::mem::transmute(reg) }
     }
 }
