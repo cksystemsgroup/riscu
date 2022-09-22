@@ -84,18 +84,18 @@ pub fn decode(i: u32) -> DecodingResult {
             0b00010 => Err(DecodingError::Custom),
             0b00011 => decode_fence(i), // misc mem instruction
             0b00100 => decode_op_imm(i),
-            0b00101 => decode_auipc(i),              // aupic instruction
-            0b00110 => decode_op_imm32(i),           // op imm32 instruction
-            0b00111 => Err(DecodingError::Reserved), // 48bit instruction
+            0b00101 => Ok(Instruction::Auipc(UType(i))), // AUIPC
+            0b00110 => decode_op_imm32(i),               // op imm32 instruction
+            0b00111 => Err(DecodingError::Reserved),     // 48bit instruction
 
             0b01000 => decode_store(i),
             0b01001 => Err(DecodingError::Unimplemented), // Store-FP
             0b01010 => Err(DecodingError::Custom),
             0b01011 => decode_amo(i),
             0b01100 => decode_op(i),
-            0b01101 => Ok(Instruction::Lui(UType(i))),
-            0b01110 => decode_op32(i),               // op32 instruction
-            0b01111 => Err(DecodingError::Reserved), // 64bit instruction
+            0b01101 => Ok(Instruction::Lui(UType(i))), // LUI
+            0b01110 => decode_op32(i),                 // op32 instruction
+            0b01111 => Err(DecodingError::Reserved),   // 64bit instruction
 
             0b10000 => Err(DecodingError::Unimplemented), // MADD
             0b10001 => Err(DecodingError::Unimplemented), // MSUB
@@ -149,11 +149,6 @@ fn decode_op_imm(i: u32) -> DecodingResult {
         (0b010000, 0b101) => Ok(Instruction::Srai(IType(i))),
         _ => Err(DecodingError::Unknown),
     }
-}
-
-#[inline(always)]
-fn decode_auipc(i: u32) -> DecodingResult {
-    Ok(Instruction::Auipc(UType(i)))
 }
 
 #[inline(always)]
