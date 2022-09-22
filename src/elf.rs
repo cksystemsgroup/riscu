@@ -21,10 +21,7 @@ pub struct Program {
 
 impl Program {
     pub fn decode(&self) -> Result<DecodedProgram, RiscuError> {
-        copy_and_decode_segments([
-            (self.code.address, self.code.content.as_slice(), 0),
-            (self.data.address, self.data.content.as_slice(), 0),
-        ])
+        copy_and_decode(self)
     }
 }
 
@@ -53,35 +50,16 @@ pub fn load_object_file<P>(object_file: P) -> Result<Program, RiscuError>
 where
     P: AsRef<Path>,
 {
-    load_elf_file(object_file, |p| Ok(copy_segments(p)))
-}
-
-pub fn load_and_decode_object_file<P>(object_file: P) -> Result<DecodedProgram, RiscuError>
-where
-    P: AsRef<Path>,
-{
-    load_elf_file(object_file, copy_and_decode_segments)
-}
-
-fn load_elf_file<P, F, R>(object_file: P, collect: F) -> Result<R, RiscuError>
-where
-    P: AsRef<Path>,
-    F: Fn([(u64, &[u8], usize); 2]) -> Result<R, RiscuError>,
-    R: Sized,
-{
     fs::read(object_file)
         .map_err(RiscuError::CouldNotReadFile)
         .and_then(|buffer| {
             Elf::parse(&buffer)
                 .map_err(RiscuError::InvalidElf)
-                .and_then(|elf| extract_program_info(&buffer, &elf).and_then(collect))
+                .and_then(|elf| extract_program(&buffer, &elf))
         })
 }
 
-fn extract_program_info<'a>(
-    raw: &'a [u8],
-    elf: &Elf,
-) -> Result<[(u64, &'a [u8], usize); 2], RiscuError> {
+fn extract_program(raw: &[u8], elf: &Elf) -> Result<Program, RiscuError> {
     if elf.is_lib || !elf.is_64 || !elf.little_endian {
         return Err(RiscuError::InvalidRiscu(
             "has to be an executable, 64bit, static, little endian binary",
@@ -201,33 +179,24 @@ fn extract_program_info<'a>(
     info!("Code start: {:#010x}", code_start);
     info!("Data start: {:#010x}", data_start);
 
-    Ok([
-        (code_start, code_segment, code_padding),
-        (data_start, data_segment, data_padding),
-    ])
-}
-
-fn copy_segments(segments: [(u64, &[u8], usize); 2]) -> Program {
-    Program {
+    Ok(Program {
         code: ProgramSegment {
-            address: segments[0].0,
-            content: [segments[0].1.to_vec(), vec![0; segments[0].2]].concat(),
+            address: code_start,
+            content: [code_segment.to_vec(), vec![0; code_padding]].concat(),
         },
         data: ProgramSegment {
-            address: segments[1].0,
-            content: [segments[1].1.to_vec(), vec![0; segments[1].2]].concat(),
+            address: data_start,
+            content: [data_segment.to_vec(), vec![0; data_padding]].concat(),
         },
-    }
+    })
 }
 
-// TODO: Handle segment padding in this collector function.
-fn copy_and_decode_segments(
-    segments: [(u64, &[u8], usize); 2],
-) -> Result<DecodedProgram, RiscuError> {
+fn copy_and_decode(program: &Program) -> Result<DecodedProgram, RiscuError> {
     let code = ProgramSegment {
-        address: segments[0].0,
-        content: segments[0]
-            .1
+        address: program.code.address,
+        content: program
+            .code
+            .content
             .chunks_exact(size_of::<u32>())
             .map(LittleEndian::read_u32)
             .map(|raw| decode(raw).map_err(RiscuError::DecodingError))
@@ -235,9 +204,10 @@ fn copy_and_decode_segments(
     };
 
     let data = ProgramSegment {
-        address: segments[1].0,
-        content: segments[1]
-            .1
+        address: program.data.address,
+        content: program
+            .data
+            .content
             .chunks_exact(size_of::<u64>())
             .map(LittleEndian::read_u64)
             .collect::<Vec<_>>(),
