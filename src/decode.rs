@@ -15,7 +15,7 @@
 // This module was modified by the Selfie authors.
 
 use crate::{types::*, Instruction};
-use log::debug;
+use log::trace;
 use thiserror::Error;
 
 pub const INSTRUCTION_SIZE: usize = 4;
@@ -69,7 +69,7 @@ pub fn instruction_length(i: u16) -> usize {
 
 /// Decode the given instruction.
 pub fn decode(i: u32) -> DecodingResult {
-    debug!(
+    trace!(
         "opcode: {:#09b}, funct3: {:#05b}, funct7: {:#09b}; full instr.: {:#034b}",
         i & 0b1111111,
         (i >> 12) & 0b111,

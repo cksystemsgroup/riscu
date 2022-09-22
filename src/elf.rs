@@ -3,7 +3,7 @@
 use crate::{decode, DecodingError, Instruction};
 use byteorder::{ByteOrder, LittleEndian};
 use goblin::elf::{program_header::PT_LOAD, section_header::SHT_PROGBITS, Elf};
-use log::info;
+use log::debug;
 use std::{fs, mem::size_of, path::Path};
 use thiserror::Error;
 
@@ -84,7 +84,7 @@ fn extract_program(raw: &[u8], elf: &Elf) -> Result<Program, RiscuError> {
     //   print!("{:?} {:#010x?}\n", ph, ph.file_range());
     // }
 
-    info!(
+    debug!(
         "Binary has {} segments according to program header table (e_phnum)",
         elf.header.e_phnum
     );
@@ -135,7 +135,7 @@ fn extract_program(raw: &[u8], elf: &Elf) -> Result<Program, RiscuError> {
     let code_padding;
 
     if code_segment_header.p_offset == 0 {
-        info!("p_offset in program header not set (i.e., no Selfie-generated RISC-U executable). Falling back to section header (i.e., assuming a gcc-generated RISC-V executable).");
+        debug!("p_offset in program header not set (i.e., no Selfie-generated RISC-U executable). Falling back to section header (i.e., assuming a gcc-generated RISC-V executable).");
 
         let code_section_header = match sh_iter
             .clone()
@@ -153,12 +153,12 @@ fn extract_program(raw: &[u8], elf: &Elf) -> Result<Program, RiscuError> {
         code_segment = &raw[code_section_header.file_range()];
         code_padding = 0;
 
-        info!(
+        debug!(
             "File range of code segment: {:#010x?}",
             code_section_header.file_range()
         );
     } else {
-        info!(
+        debug!(
             "p_offset in program header set (i.e., assuming a Selfie-generated RISC-U executable)."
         );
 
@@ -166,7 +166,7 @@ fn extract_program(raw: &[u8], elf: &Elf) -> Result<Program, RiscuError> {
         code_segment = &raw[code_segment_header.file_range()];
         code_padding = (code_segment_header.p_memsz - code_segment_header.p_filesz) as usize;
 
-        info!(
+        debug!(
             "File range of code segment: {:#010x?}",
             code_segment_header.file_range()
         );
@@ -176,8 +176,8 @@ fn extract_program(raw: &[u8], elf: &Elf) -> Result<Program, RiscuError> {
     let data_segment = &raw[data_segment_header.file_range()];
     let data_padding = (data_segment_header.p_memsz - data_segment_header.p_filesz) as usize;
 
-    info!("Code start: {:#010x}", code_start);
-    info!("Data start: {:#010x}", data_start);
+    debug!("Code start: {:#010x}", code_start);
+    debug!("Data start: {:#010x}", data_start);
 
     Ok(Program {
         code: ProgramSegment {
