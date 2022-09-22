@@ -1,4 +1,4 @@
-use riscu::load_and_decode_object_file;
+use riscu::load_object_file;
 use std::{env, fs::File, path::PathBuf, process::Command};
 use tempfile::{tempdir, TempDir};
 use which::which;
@@ -89,7 +89,7 @@ fn decode_selfie_binary() {
     let result = with_temp_dir(|dir| {
         let object_file = compile_selfie(dir);
 
-        load_and_decode_object_file(object_file)
+        load_object_file(object_file)?.decode()
     });
 
     assert!(
