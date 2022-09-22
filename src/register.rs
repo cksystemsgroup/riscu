@@ -1,6 +1,6 @@
 use core::fmt;
 
-#[derive(Copy, Clone, PartialOrd, PartialEq)]
+#[derive(Clone, Copy, Eq, PartialOrd, PartialEq)]
 #[repr(u32)]
 pub enum Register {
     Zero = 0,
