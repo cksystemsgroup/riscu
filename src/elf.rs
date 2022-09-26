@@ -4,7 +4,7 @@ use crate::{decode, DecodingError, Instruction};
 use byteorder::{ByteOrder, LittleEndian};
 use goblin::elf::{program_header::PT_LOAD, section_header::SHT_PROGBITS, Elf};
 use log::debug;
-use std::{fs, mem::size_of, path::Path};
+use std::{fs, mem::size_of, ops::Range, path::Path};
 use thiserror::Error;
 
 #[derive(Clone, Debug)]
@@ -17,6 +17,7 @@ pub struct ProgramSegment<T> {
 pub struct Program {
     pub code: ProgramSegment<u8>,
     pub data: ProgramSegment<u8>,
+    pub instruction_range: Range<u64>,
 }
 
 impl Program {
@@ -72,7 +73,7 @@ fn extract_program(raw: &[u8], elf: &Elf) -> Result<Program, RiscuError> {
         .iter()
         .filter(|ph| ph.p_type == PT_LOAD);
 
-    let sh_iter = elf
+    let mut sh_iter = elf
         .section_headers
         .as_slice()
         .iter()
@@ -130,54 +131,36 @@ fn extract_program(raw: &[u8], elf: &Elf) -> Result<Program, RiscuError> {
             }
         };
 
-    let code_start;
-    let code_segment;
-    let code_padding;
-
-    if code_segment_header.p_offset == 0 {
-        debug!("p_offset in program header not set (i.e., no Selfie-generated RISC-U executable). Falling back to section header (i.e., assuming a gcc-generated RISC-V executable).");
-
-        let code_section_header = match sh_iter
-            .clone()
-            .find(|sh| !sh.is_writable() && sh.is_executable())
-        {
-            Some(segment) => segment,
-            None => {
-                return Err(RiscuError::InvalidRiscu(
-                    "code section (executable) is missing",
-                ))
-            }
-        };
-
-        code_start = code_section_header.sh_addr;
-        code_segment = &raw[code_section_header.file_range()];
-        code_padding = 0;
-
-        debug!(
-            "File range of code segment: {:#010x?}",
-            code_section_header.file_range()
-        );
-    } else {
-        debug!(
-            "p_offset in program header set (i.e., assuming a Selfie-generated RISC-U executable)."
-        );
-
-        code_start = code_segment_header.p_vaddr;
-        code_segment = &raw[code_segment_header.file_range()];
-        code_padding = (code_segment_header.p_memsz - code_segment_header.p_filesz) as usize;
-
-        debug!(
-            "File range of code segment: {:#010x?}",
-            code_segment_header.file_range()
-        );
-    }
+    let code_start = code_segment_header.p_vaddr;
+    let code_segment = &raw[code_segment_header.file_range()];
+    let code_padding = (code_segment_header.p_memsz - code_segment_header.p_filesz) as usize;
 
     let data_start = data_segment_header.p_vaddr;
     let data_segment = &raw[data_segment_header.file_range()];
     let data_padding = (data_segment_header.p_memsz - data_segment_header.p_filesz) as usize;
 
-    debug!("Code start: {:#010x}", code_start);
-    debug!("Data start: {:#010x}", data_start);
+    let instruction_range = match sh_iter.find(|sh| !sh.is_writable() && sh.is_executable()) {
+        Some(section) => (section.vm_range().start as u64)..(section.vm_range().end as u64),
+        None => (code_start..(code_start + code_segment.len() as u64)),
+    };
+
+    debug!(
+        "Code : start={:#010x} size={:#010x} padding={:#010x}",
+        code_start,
+        code_segment.len(),
+        code_padding
+    );
+    debug!(
+        "Data : start={:#010x} size={:#010x} padding={:#010x}",
+        data_start,
+        data_segment.len(),
+        data_padding
+    );
+    debug!(
+        "Instr: start={:#010x} size={:#010x}",
+        instruction_range.start,
+        instruction_range.end - instruction_range.start
+    );
 
     Ok(Program {
         code: ProgramSegment {
@@ -188,15 +171,17 @@ fn extract_program(raw: &[u8], elf: &Elf) -> Result<Program, RiscuError> {
             address: data_start,
             content: [data_segment.to_vec(), vec![0; data_padding]].concat(),
         },
+        instruction_range,
     })
 }
 
 fn copy_and_decode(program: &Program) -> Result<DecodedProgram, RiscuError> {
+    let instr = ((program.instruction_range.start - program.code.address) as usize)
+        ..((program.instruction_range.end - program.code.address) as usize);
+
     let code = ProgramSegment {
-        address: program.code.address,
-        content: program
-            .code
-            .content
+        address: program.instruction_range.start,
+        content: program.code.content[instr]
             .chunks_exact(size_of::<u32>())
             .map(LittleEndian::read_u32)
             .map(|raw| decode(raw).map_err(RiscuError::DecodingError))
