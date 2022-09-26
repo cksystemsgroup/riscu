@@ -24,6 +24,13 @@ impl Program {
     pub fn decode(&self) -> Result<DecodedProgram, RiscuError> {
         copy_and_decode(self)
     }
+
+    pub fn instructions(&self) -> &[u8] {
+        let instr_start = (self.instruction_range.start - self.code.address) as usize;
+        let instr_end = (self.instruction_range.end - self.code.address) as usize;
+        let instr = instr_start..instr_end;
+        &self.code.content[instr]
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -176,12 +183,10 @@ fn extract_program(raw: &[u8], elf: &Elf) -> Result<Program, RiscuError> {
 }
 
 fn copy_and_decode(program: &Program) -> Result<DecodedProgram, RiscuError> {
-    let instr = ((program.instruction_range.start - program.code.address) as usize)
-        ..((program.instruction_range.end - program.code.address) as usize);
-
     let code = ProgramSegment {
         address: program.instruction_range.start,
-        content: program.code.content[instr]
+        content: program
+            .instructions()
             .chunks_exact(size_of::<u32>())
             .map(LittleEndian::read_u32)
             .map(|raw| decode(raw).map_err(RiscuError::DecodingError))
