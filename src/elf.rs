@@ -141,7 +141,7 @@ fn extract_program(raw: &[u8], elf: &Elf) -> Result<Program, RiscuError> {
 
     let instruction_range = match sh_iter.find(|sh| !sh.is_writable() && sh.is_executable()) {
         Some(section) => (section.vm_range().start as u64)..(section.vm_range().end as u64),
-        None => (code_start..(code_start + code_segment.len() as u64)),
+        None => code_start..(code_start + code_segment.len() as u64),
     };
 
     debug!(
