@@ -20,8 +20,18 @@ fn build_rtype(instruction_type: CInstr, rd: u16, rs1: u16, rs2: u16) -> u32 {
     }
 }
 
-pub fn decompress_q0(_i: u16) -> DecompressionResult {
-    unreachable!()
+pub fn decompress_q0(i: u16) -> DecompressionResult {
+    match (i >> 13) & 0b111 {
+        0b000 => Err(DecodingError::Illegal),
+        0b001 => Err(DecodingError::Unimplemented),
+        0b010 => Err(DecodingError::Unimplemented),
+        0b011 => Err(DecodingError::Unimplemented),
+        0b100 => Err(DecodingError::Unimplemented),
+        0b101 => Err(DecodingError::Unimplemented),
+        0b110 => Err(DecodingError::Unimplemented),
+        0b111 => Err(DecodingError::Unimplemented),
+        _ => unreachable!(),
+    }
 }
 
 pub fn decompress_q1(i: u16) -> DecompressionResult {
@@ -54,6 +64,16 @@ pub fn decompress_q1(i: u16) -> DecompressionResult {
     }
 }
 
-pub fn decompress_q2(_i: u16) -> DecompressionResult {
-    unreachable!()
+pub fn decompress_q2(i: u16) -> DecompressionResult {
+    match (i >> 13) & 0b111 {
+        0b000 => Err(DecodingError::Unimplemented),
+        0b001 => Err(DecodingError::Unimplemented),
+        0b010 => Err(DecodingError::Unimplemented),
+        0b011 => Err(DecodingError::Unimplemented),
+        0b100 => Err(DecodingError::Unimplemented),
+        0b101 => Err(DecodingError::Unimplemented),
+        0b110 => Err(DecodingError::Unimplemented),
+        0b111 => Err(DecodingError::Unimplemented),
+        _ => unreachable!(),
+    }
 }
