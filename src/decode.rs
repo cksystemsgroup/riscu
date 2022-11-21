@@ -14,6 +14,7 @@
 
 // This module was modified by the Selfie authors.
 
+use crate::decompress::*;
 use crate::{types::*, Instruction};
 use log::trace;
 use thiserror::Error;
@@ -44,6 +45,10 @@ pub enum DecodingError {
     /// Instruction type is well defined but is not part of RISC-U
     #[error("Instruction type is well defined but is not part of RISC-U")]
     Unimplemented,
+
+    /// Instruction is illegal
+    #[error("Instruction is illegal")]
+    Illegal,
 }
 
 type DecodingResult = Result<Instruction, DecodingError>;
@@ -116,7 +121,10 @@ pub fn decode(i: u32) -> DecodingResult {
             0b11111 => Err(DecodingError::Reserved), // >= 80bit instruction
             _ => unreachable!(),
         },
-        _ => Err(DecodingError::Unknown), // compressed instructions
+        0b00 => decompress_q0((i & 0xffff) as u16).and_then(decode),
+        0b01 => decompress_q1((i & 0xffff) as u16).and_then(decode),
+        0b10 => decompress_q2((i & 0xffff) as u16).and_then(decode),
+        _ => unreachable!(),
     }
 }
 
@@ -298,6 +306,11 @@ mod tests {
         assert_eq!(decode(0x00008067).unwrap(), Jalr(IType(0x00008067))); // jalr x0,0(x1)
         assert_eq!(decode(0x00008067).unwrap(), Jalr(IType(0x00008067))); // jalr x0,0(x1)
         assert_eq!(decode(0x000f0067).unwrap(), Jalr(IType(0x000f0067))); // jalr x0,0(x30)
+    }
+
+    #[test]
+    fn decoding_compressed() {
+        assert_eq!(decode(0x00008c01).unwrap(), Sub(RType(0x40840433))); // sub x8,x8,x8
     }
 
     #[test]
