@@ -1,4 +1,5 @@
-use crate::DecodingError;
+use crate::{decode, instruction_length, DecodingError, Instruction};
+use byteorder::{ByteOrder, LittleEndian};
 
 type DecompressionResult = Result<u32, DecodingError>;
 
@@ -75,5 +76,104 @@ pub fn decompress_q2(i: u16) -> DecompressionResult {
         0b110 => Err(DecodingError::Unimplemented),
         0b111 => Err(DecodingError::Unimplemented),
         _ => unreachable!(),
+    }
+}
+
+/// An iterator for all PC values where an instruction begins.
+pub struct LocIter<'a> {
+    memory_view: &'a [u8],
+    current_index: u64,
+    address: u64,
+}
+
+impl LocIter<'_> {
+    pub fn new(memory_view: &[u8], address: u64) -> LocIter<'_> {
+        LocIter {
+            memory_view,
+            current_index: 0,
+            address,
+        }
+    }
+
+    fn current_word(&self) -> u16 {
+        let idx: usize = self.current_index as usize;
+        let begin = &self.memory_view[idx..idx + 2];
+        LittleEndian::read_u16(begin)
+    }
+}
+
+impl Iterator for LocIter<'_> {
+    type Item = u64;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match instruction_length(self.current_word()) {
+            2 => {
+                self.current_index += 2;
+                Some(self.address + self.current_index - 2)
+            }
+            4 => {
+                self.current_index += 4;
+                Some(self.address + self.current_index - 4)
+            }
+            l => panic!("Unimplemented instruction length: {}", l),
+        }
+    }
+}
+
+/// An iterator for all instructions in the program.
+pub struct InstructionIter<'a> {
+    memory_view: &'a [u8],
+    current_index: u64,
+}
+
+impl InstructionIter<'_> {
+    pub fn new(memory_view: &[u8]) -> InstructionIter<'_> {
+        InstructionIter {
+            memory_view,
+            current_index: 0,
+        }
+    }
+
+    fn current_word(&self) -> u16 {
+        let idx: usize = self.current_index as usize;
+        let begin = &self.memory_view[idx..idx + 2];
+
+        LittleEndian::read_u16(begin)
+    }
+
+    fn fetch_word(&mut self) -> u16 {
+        let word = self.current_word();
+
+        self.current_index += 2;
+
+        word
+    }
+
+    fn fetch_dword(&mut self) -> u32 {
+        let idx: usize = self.current_index as usize;
+        let begin = &self.memory_view[idx..idx + 4];
+
+        self.current_index += 4;
+
+        LittleEndian::read_u32(begin)
+    }
+}
+
+impl Iterator for InstructionIter<'_> {
+    type Item = Instruction;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.current_index >= self.memory_view.len() as u64 {
+            return None;
+        }
+
+        Some(
+            decode(match instruction_length(self.current_word()) {
+                2 => self.fetch_word().into(),
+                4 => self.fetch_dword(),
+                l => panic!("Unimplemented instruction length: {}", l),
+            })
+            .expect("valid instruction"),
+        )
     }
 }
