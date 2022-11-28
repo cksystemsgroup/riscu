@@ -1,6 +1,9 @@
 //! # Load RISC-U ELF64 files
 
-use crate::{decode, DecodingError, Instruction};
+use crate::{
+    decompress::{InstructionIter, LocationIter},
+    DecodingError,
+};
 use byteorder::{ByteOrder, LittleEndian};
 use goblin::elf::{program_header::PT_LOAD, section_header::SHT_PROGBITS, Elf};
 use log::debug;
@@ -35,8 +38,18 @@ impl Program {
 
 #[derive(Clone, Debug)]
 pub struct DecodedProgram {
-    pub code: ProgramSegment<Instruction>,
+    pub code: ProgramSegment<u8>,
     pub data: ProgramSegment<u64>,
+}
+
+impl DecodedProgram {
+    pub fn iter_locations(&self) -> LocationIter<'_> {
+        LocationIter::new(&self.code.content, self.code.address)
+    }
+
+    pub fn iter_instructions(&self) -> InstructionIter<'_> {
+        InstructionIter::new(&self.code.content)
+    }
 }
 
 #[derive(Error, Debug)]
@@ -185,12 +198,7 @@ fn extract_program(raw: &[u8], elf: &Elf) -> Result<Program, RiscuError> {
 fn copy_and_decode(program: &Program) -> Result<DecodedProgram, RiscuError> {
     let code = ProgramSegment {
         address: program.instruction_range.start,
-        content: program
-            .instructions()
-            .chunks_exact(size_of::<u32>())
-            .map(LittleEndian::read_u32)
-            .map(|raw| decode(raw).map_err(RiscuError::DecodingError))
-            .collect::<Result<Vec<_>, _>>()?,
+        content: program.instructions().to_vec(),
     };
 
     let data = ProgramSegment {

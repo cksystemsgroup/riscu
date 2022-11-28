@@ -1,4 +1,4 @@
-use crate::{decode, instruction_length, DecodingError, Instruction};
+use crate::{decode, instruction_length, DecodingError, Instruction, Register};
 use byteorder::{ByteOrder, LittleEndian};
 
 type DecompressionResult = Result<u32, DecodingError>;
@@ -80,15 +80,15 @@ pub fn decompress_q2(i: u16) -> DecompressionResult {
 }
 
 /// An iterator for all PC values where an instruction begins.
-pub struct LocIter<'a> {
+pub struct LocationIter<'a> {
     memory_view: &'a [u8],
     current_index: u64,
     address: u64,
 }
 
-impl LocIter<'_> {
-    pub fn new(memory_view: &[u8], address: u64) -> LocIter<'_> {
-        LocIter {
+impl LocationIter<'_> {
+    pub fn new(memory_view: &[u8], address: u64) -> LocationIter<'_> {
+        LocationIter {
             memory_view,
             current_index: 0,
             address,
@@ -102,7 +102,7 @@ impl LocIter<'_> {
     }
 }
 
-impl Iterator for LocIter<'_> {
+impl Iterator for LocationIter<'_> {
     type Item = u64;
 
     fn next(&mut self) -> Option<Self::Item> {
