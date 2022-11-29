@@ -10,6 +10,7 @@ enum CrInstr {
 enum CiInstr {
     Addi,
 }
+
 fn build_rtype(instruction_type: CrInstr, rd: u16, rs1: u16, rs2: u16) -> u32 {
     let mold = |funct7: u32, rs2: u16, rs1: u16, funct3: u32, rd: u16, opcode: u32| -> u32 {
         let rd: u32 = rd.into();
@@ -40,21 +41,21 @@ fn build_itype(instruction_type: CiInstr, rd: u16, rs1: u16, imm: u16) -> u32 {
 pub fn decompress_q0(i: u16) -> DecompressionResult {
     match (i >> 13) & 0b111 {
         0b000 => Err(DecodingError::Illegal),
-        0b001 => Err(DecodingError::Unimplemented),
-        0b010 => Err(DecodingError::Unimplemented),
-        0b011 => Err(DecodingError::Unimplemented),
-        0b100 => Err(DecodingError::Unimplemented),
-        0b101 => Err(DecodingError::Unimplemented),
-        0b110 => Err(DecodingError::Unimplemented),
-        0b111 => Err(DecodingError::Unimplemented),
+        0b001 /* C.FLD */ => Err(DecodingError::Unimplemented),
+        0b010 /* C.LW */ => Err(DecodingError::Unimplemented),
+        0b011 /* C.LD */ => Err(DecodingError::Unimplemented),
+        0b100 => Err(DecodingError::Reserved),
+        0b101 /* C.FSD */ => Err(DecodingError::Unimplemented),
+        0b110 /* C.SW */ => Err(DecodingError::Unimplemented),
+        0b111 /* C.SD */ => Err(DecodingError::Unimplemented),
         _ => unreachable!(),
     }
 }
 
 pub fn decompress_q1(i: u16) -> DecompressionResult {
     match (i >> 13) & 0b111 {
-        0b000 => Err(DecodingError::Unimplemented),
-        0b001 => Err(DecodingError::Unimplemented),
+        0b000 /* C.ADDI */ => Err(DecodingError::Unimplemented),
+        0b001 /* C.ADDIW */ => Err(DecodingError::Unimplemented),
         0b010 /* C.LI */ => {
             let rd = (i >> 7) & 0b11111;
             let imm = ((i >> 6) & 0b100000) | (i >> 2) & 0b11111;
@@ -81,23 +82,23 @@ pub fn decompress_q1(i: u16) -> DecompressionResult {
             }
             _ => Err(DecodingError::Unimplemented),
         },
-        0b101 => Err(DecodingError::Unimplemented),
-        0b110 => Err(DecodingError::Unimplemented),
-        0b111 => Err(DecodingError::Unimplemented),
+        0b101 /* C.J */ => Err(DecodingError::Unimplemented),
+        0b110 /* C.BEQZ */ => Err(DecodingError::Unimplemented),
+        0b111 /* C.BNEZ */ => Err(DecodingError::Unimplemented),
         _ => unreachable!(),
     }
 }
 
 pub fn decompress_q2(i: u16) -> DecompressionResult {
     match (i >> 13) & 0b111 {
-        0b000 => Err(DecodingError::Unimplemented),
-        0b001 => Err(DecodingError::Unimplemented),
-        0b010 => Err(DecodingError::Unimplemented),
-        0b011 => Err(DecodingError::Unimplemented),
-        0b100 => Err(DecodingError::Unimplemented),
-        0b101 => Err(DecodingError::Unimplemented),
-        0b110 => Err(DecodingError::Unimplemented),
-        0b111 => Err(DecodingError::Unimplemented),
+        0b000 /* C.SLLI{,64} */ => Err(DecodingError::Unimplemented),
+        0b001 /* C.FLDSP */ => Err(DecodingError::Unimplemented),
+        0b010 /* C.LWSP */ => Err(DecodingError::Unimplemented),
+        0b011 /* C.LDSP */ => Err(DecodingError::Unimplemented),
+        0b100 /* C.{RJ,MV,EBREAK,JALR,ADD} */ => Err(DecodingError::Unimplemented),
+        0b101 /* C.FSDSP */ => Err(DecodingError::Unimplemented),
+        0b110 /* C.SWSP */ => Err(DecodingError::Unimplemented),
+        0b111 /* C.SDSP */ => Err(DecodingError::Unimplemented),
         _ => unreachable!(),
     }
 }
