@@ -2,6 +2,7 @@ pub mod decode;
 pub mod decompress;
 pub mod elf;
 pub mod instruction;
+pub mod iterators;
 pub mod register;
 pub mod types;
 

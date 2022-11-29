@@ -1,7 +1,7 @@
 //! # Load RISC-U ELF64 files
 
 use crate::{
-    decompress::{InstructionIter, LocationIter},
+    iterators::{InstructionIter, LocationIter},
     DecodingError,
 };
 use byteorder::{ByteOrder, LittleEndian};
