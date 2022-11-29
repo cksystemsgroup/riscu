@@ -3,11 +3,11 @@ use byteorder::{ByteOrder, LittleEndian};
 
 type DecompressionResult = Result<u32, DecodingError>;
 
-enum CInstr {
-    Csub,
+enum CrInstr {
+    Sub,
 }
 
-fn build_rtype(instruction_type: CInstr, rd: u16, rs1: u16, rs2: u16) -> u32 {
+fn build_rtype(instruction_type: CrInstr, rd: u16, rs1: u16, rs2: u16) -> u32 {
     let mold = |funct7: u32, rs2: u16, rs1: u16, funct3: u32, rd: u16, opcode: u32| -> u32 {
         let rd: u32 = rd.into();
         let rs1: u32 = rs1.into();
@@ -17,7 +17,7 @@ fn build_rtype(instruction_type: CInstr, rd: u16, rs1: u16, rs2: u16) -> u32 {
     };
 
     match instruction_type {
-        CInstr::Csub => mold(0b0100000, rs2, rs1, 0b000, rd, 0b0110011),
+        CrInstr::Sub => mold(0b0100000, rs2, rs1, 0b000, rd, 0b0110011),
     }
 }
 
@@ -50,7 +50,7 @@ pub fn decompress_q1(i: u16) -> DecompressionResult {
                 let rs2 = 8 + ((i >> 2) & 0b111);
 
                 match ((i >> 12) & 0b1, (i >> 5) & 0b11) {
-                    (0, 0b00) => Ok(build_rtype(CInstr::Csub, rs1_rd, rs1_rd, rs2)),
+                    (0, 0b00) => Ok(build_rtype(CrInstr::Sub, rs1_rd, rs1_rd, rs2)),
                     (1, 0b10) => Err(DecodingError::Reserved),
                     (1, 0b11) => Err(DecodingError::Reserved),
                     _ => unreachable!(),
