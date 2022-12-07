@@ -9,6 +9,7 @@ enum CrInstr {
 enum CiInstr {
     Addi,
     Lw,
+    Jalr,
 }
 
 enum CbInstr {
@@ -41,6 +42,7 @@ fn build_itype(instruction_type: CiInstr, rd: u16, rs1: u16, imm: u16) -> u32 {
     match instruction_type {
         CiInstr::Addi => mold(imm, rs1, 0b000, rd, 0b0010011),
         CiInstr::Lw => mold(imm, Register::Sp as u16, 0b010, rd, 0b0000011),
+        CiInstr::Jalr => mold(imm, rs1, 0b000, rd, 0b1100111),
     }
 }
 
@@ -166,7 +168,19 @@ pub fn decompress_q2(i: u16) -> DecompressionResult {
             Ok(build_itype(CiInstr::Lw, rd, 0, imm))
         }
         0b011 /* C.LDSP */ => Err(DecodingError::Unimplemented),
-        0b100 /* C.{RJ,MV,EBREAK,JALR,ADD} */ => Err(DecodingError::Unimplemented),
+        0b100 /* C.{JR,MV,EBREAK,JALR,ADD} */ => {
+            match ((i >> 12) & 0b1, (i >> 2) & 0b1_1111) {
+                (0, 0) /* C.JR*/ => {
+                    let rs1 = (i >> 7) & 0b1_1111;
+                    let imm = 0;
+
+                    assert!(rs1 != 0, "rs1 == 0 is reserved!");
+
+                    Ok(build_itype(CiInstr::Jalr, Register::Zero as u16, rs1, imm))
+                },
+                (_, _) => Err(DecodingError::Unimplemented),
+            }
+        },
         0b101 /* C.FSDSP */ => Err(DecodingError::Unimplemented),
         0b110 /* C.SWSP */ => Err(DecodingError::Unimplemented),
         0b111 /* C.SDSP */ => Err(DecodingError::Unimplemented),
