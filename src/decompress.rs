@@ -39,6 +39,24 @@ fn build_itype(instruction_type: CiInstr, rd: u16, rs1: u16, imm: u16) -> u32 {
         CiInstr::Lw => mold(imm, Register::Sp as u16, 0b010, rd, 0b0000011),
     }
 }
+
+fn build_jtype(imm: u16) -> u32 {
+    let mold = |imm: u16, rd: u16, opcode: u32| -> u32 {
+        let rd: u32 = rd.into();
+
+        // perform sign extension
+        let sign: u32 = (imm >> 11).into();
+        let imm: u32 = (0xff_ff_f0_00 * sign) | (imm as u32);
+
+        let imm = imm.permute(&[
+            20, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 11, 19, 18, 17, 16, 15, 14, 13, 12,
+        ]);
+
+        (imm << 12) | (rd << 7) | opcode
+    };
+
+    mold(imm, Register::Zero as u16, 0b1101111)
+}
 pub fn decompress_q0(i: u16) -> DecompressionResult {
     if i == 0 {
         return Err(DecodingError::Illegal);
@@ -94,8 +112,11 @@ pub fn decompress_q1(i: u16) -> DecompressionResult {
             }
             _ => Err(DecodingError::Unimplemented),
         },
-        0b101 /* C.J */ => Err(DecodingError::Unimplemented),
-        0b110 /* C.BEQZ */ => Err(DecodingError::Unimplemented),
+        0b101 /* C.J */ => {
+            let imm = get_imm(i, InstrFormat::Cj).inv_permute(&[11, 4, 9, 8, 10, 6, 7, 3, 2, 1, 5]);
+
+            Ok(build_jtype(imm))
+        },
         0b111 /* C.BNEZ */ => Err(DecodingError::Unimplemented),
         _ => unreachable!(),
     }
@@ -125,6 +146,7 @@ pub fn decompress_q2(i: u16) -> DecompressionResult {
 enum InstrFormat {
     Ci,
     Ciw,
+    Cj,
 }
 
 #[inline(always)]
@@ -132,6 +154,7 @@ fn get_imm(i: u16, fmt: InstrFormat) -> u16 {
     match fmt {
         InstrFormat::Ci => ((i >> 7) & 0b10_0000) | ((i >> 2) & 0b1_1111),
         InstrFormat::Ciw => (i >> 5) & 0b1111_1111,
+        InstrFormat::Cj => (i >> 2) & 0b111_1111_1111,
     }
 }
 
