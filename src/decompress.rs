@@ -113,7 +113,15 @@ pub fn decompress_q0(i: u16) -> DecompressionResult {
 
 pub fn decompress_q1(i: u16) -> DecompressionResult {
     match (i >> 13) & 0b111 {
-        0b000 /* C.ADDI */ => Err(DecodingError::Unimplemented),
+        0b000 /* C.ADDI */ => {
+            let imm = sign_extend(get_imm(i, InstrFormat::Ci), 6);
+            let dest = (i >> 7) & 0b1_1111;
+
+            assert!(dest != 0, "dest == 0 is reserved!");
+            assert!(imm != 0, "imm == 0 is a HINT!");
+
+            Ok(build_itype(CiInstr::Addi, dest, dest, imm))
+        },
         0b001 /* C.ADDIW */ => Err(DecodingError::Unimplemented),
         0b010 /* C.LI */ => {
             let rd = (i >> 7) & 0b11111;
@@ -292,5 +300,16 @@ impl Permutable for u32 {
             .enumerate()
             .map(|(bit, offset)| ((self >> offset) & 0b1) << bit)
             .sum()
+    }
+}
+
+fn sign_extend(n: u16, b: u32) -> u16 {
+    assert!(n <= 2_u16.pow(b));
+    assert!(0 < b && b < 16);
+
+    if n < 2_u16.pow(b - 1) {
+        n
+    } else {
+        n.wrapping_sub(2_u16.pow(b))
     }
 }
