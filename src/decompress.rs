@@ -1,4 +1,4 @@
-use crate::DecodingError;
+use crate::{DecodingError, Register};
 
 type DecompressionResult = Result<u32, DecodingError>;
 
@@ -57,11 +57,11 @@ pub fn decompress_q1(i: u16) -> DecompressionResult {
         0b001 /* C.ADDIW */ => Err(DecodingError::Unimplemented),
         0b010 /* C.LI */ => {
             let rd = (i >> 7) & 0b11111;
-            let imm = ((i >> 6) & 0b100000) | (i >> 2) & 0b11111;
+            let imm = get_imm(i, InstrFormat::Ci);
 
             assert!(rd != 0, "rd == 0 is reserved!");
 
-            Ok(build_itype(CiInstr::Addi, rd, 0, imm))
+            Ok(build_itype(CiInstr::Addi, rd, Register::Zero as u16, imm))
         }
         0b011 /* C.LUI/C.ADDI16SP */ => Err(DecodingError::Unimplemented),
         0b100 /* MISC-ALU */ => match (i >> 10) & 0b11 {
@@ -99,6 +99,17 @@ pub fn decompress_q2(i: u16) -> DecompressionResult {
         0b110 /* C.SWSP */ => Err(DecodingError::Unimplemented),
         0b111 /* C.SDSP */ => Err(DecodingError::Unimplemented),
         _ => unreachable!(),
+    }
+}
+
+enum InstrFormat {
+    Ci,
+}
+
+#[inline(always)]
+fn get_imm(i: u16, fmt: InstrFormat) -> u16 {
+    match fmt {
+        InstrFormat::Ci => ((i >> 7) & 0b10_0000) | ((i >> 2) & 0b1_1111),
     }
 }
 
