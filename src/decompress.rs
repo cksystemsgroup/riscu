@@ -4,6 +4,7 @@ type DecompressionResult = Result<u32, DecodingError>;
 
 enum CrInstr {
     Sub,
+    Srai,
 }
 
 enum CiInstr {
@@ -27,6 +28,7 @@ fn build_rtype(instruction_type: CrInstr, rd: u16, rs1: u16, rs2: u16) -> u32 {
 
     match instruction_type {
         CrInstr::Sub => mold(0b0100000, rs2, rs1, 0b000, rd, 0b0110011),
+        CrInstr::Srai => mold(0b0100000, rs2, rs1, 0b101, rd, 0b0010011),
     }
 }
 
@@ -124,7 +126,15 @@ pub fn decompress_q1(i: u16) -> DecompressionResult {
         0b011 /* C.LUI/C.ADDI16SP */ => Err(DecodingError::Unimplemented),
         0b100 /* MISC-ALU */ => match (i >> 10) & 0b11 {
             0b00 => Err(DecodingError::Unimplemented),
-            0b01 => Err(DecodingError::Unimplemented),
+            0b01 /* C.SRAI */ => {
+                let shamt = get_imm(i, InstrFormat::Ci);
+                let rd_rs1 = 8 + ((i >> 7) & 0b111);
+
+                assert!(shamt != 0, "shamt == 0 is reserved!");
+
+                // Cheating a little -> The shift operations encode the shift amount as rs2
+                Ok(build_rtype(CrInstr::Srai, rd_rs1, rd_rs1, shamt))
+            },
             0b10 => Err(DecodingError::Unimplemented),
             0b11 => {
                 let rs1_rd = 8 + ((i >> 7) & 0b111);
