@@ -11,6 +11,10 @@ enum CiInstr {
     Lw,
 }
 
+enum CbInstr {
+    Beq,
+}
+
 fn build_rtype(instruction_type: CrInstr, rd: u16, rs1: u16, rs2: u16) -> u32 {
     let mold = |funct7: u32, rs2: u16, rs1: u16, funct3: u32, rd: u16, opcode: u32| -> u32 {
         let rd: u32 = rd.into();
@@ -57,6 +61,27 @@ fn build_jtype(imm: u16) -> u32 {
 
     mold(imm, Register::Zero as u16, 0b1101111)
 }
+
+fn build_btype(instruction_type: CbInstr, rs1: u16, imm: u16) -> u32 {
+    let mold = |imm: u16, rs1: u16, rs2: u16, funct3: u32, opcode: u32| -> u32 {
+        let rs1: u32 = rs1.into();
+        let rs2: u32 = rs2.into();
+
+        let imm: u32 = imm.permute(&[12, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 11]).into();
+
+        ((imm >> 5) << 25)
+            | (rs2 << 20)
+            | (rs1 << 15)
+            | (funct3 << 12)
+            | ((imm & 0b11111) << 7)
+            | opcode
+    };
+
+    match instruction_type {
+        CbInstr::Beq => mold(imm, rs1, Register::Zero as u16, 0b000, 0b1100011),
+    }
+}
+
 pub fn decompress_q0(i: u16) -> DecompressionResult {
     if i == 0 {
         return Err(DecodingError::Illegal);
@@ -117,6 +142,12 @@ pub fn decompress_q1(i: u16) -> DecompressionResult {
 
             Ok(build_jtype(imm))
         },
+        0b110 /* C.BEQZ */ => {
+            let rs1 = 8 + ((i >> 7) & 0b111);
+            let offset = get_imm(i, InstrFormat::Cb).inv_permute(&[8, 4, 3, 7, 6, 2, 1, 5]);
+
+            Ok(build_btype(CbInstr::Beq, rs1, offset))
+        },
         0b111 /* C.BNEZ */ => Err(DecodingError::Unimplemented),
         _ => unreachable!(),
     }
@@ -146,6 +177,7 @@ pub fn decompress_q2(i: u16) -> DecompressionResult {
 enum InstrFormat {
     Ci,
     Ciw,
+    Cb,
     Cj,
 }
 
@@ -154,6 +186,7 @@ fn get_imm(i: u16, fmt: InstrFormat) -> u16 {
     match fmt {
         InstrFormat::Ci => ((i >> 7) & 0b10_0000) | ((i >> 2) & 0b1_1111),
         InstrFormat::Ciw => (i >> 5) & 0b1111_1111,
+        InstrFormat::Cb => ((i >> 5) & 0b1110_0000) | ((i >> 2) & 0b1_1111),
         InstrFormat::Cj => (i >> 2) & 0b111_1111_1111,
     }
 }
