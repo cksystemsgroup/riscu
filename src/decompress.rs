@@ -101,3 +101,83 @@ pub fn decompress_q2(i: u16) -> DecompressionResult {
         _ => unreachable!(),
     }
 }
+
+trait Permutable {
+    /// When going from an number to the permuted representation in an instruction.
+    fn permute(self, perm: &[usize]) -> Self;
+
+    /// When going from a permuted number in an instruction to the binary representation.
+    fn inv_permute(self, perm: &[usize]) -> Self;
+}
+
+impl Permutable for u16 {
+    fn inv_permute(self, perm: &[usize]) -> Self {
+        debug_assert!(
+            perm.len() <= 16, 
+            "Permutation of u16 cannot exceed 16 entries."
+        );
+        debug_assert!(
+            perm.iter().all(|x| x < &16), 
+            "Permutation indices for u16 cannot exceed 15."
+        );
+
+        perm.iter()
+            .rev()
+            .enumerate()
+            .map(|(bit, offset)| ((self >> bit) & 0b1) << offset)
+            .sum()
+    }
+
+    fn permute(self, perm: &[usize]) -> Self {
+        debug_assert!(
+            perm.len() <= 16,
+            "Permutation of u16 cannot exceed 16 entries."
+        );
+        debug_assert!(
+            perm.iter().all(|x| x < &16),
+            "Permutation indices for u16 cannot exceed 15."
+        );
+
+        perm.iter()
+            .rev()
+            .enumerate()
+            .map(|(bit, offset)| ((self >> offset) & 0b1) << bit)
+            .sum()
+    }
+}
+
+impl Permutable for u32 {
+    fn inv_permute(self, perm: &[usize]) -> Self {
+        debug_assert!(
+            perm.len() <= 32,
+            "Permutation of u32 cannot exceed 32 entries."
+        );
+        debug_assert!(
+            perm.iter().all(|x| x < &32),
+            "Permutation indices for u32 cannot exceed 31."
+        );
+
+        perm.iter()
+            .rev()
+            .enumerate()
+            .map(|(bit, offset)| ((self >> bit) & 0b1) << offset)
+            .sum()
+    }
+
+    fn permute(self, perm: &[usize]) -> Self {
+        debug_assert!(
+            perm.len() <= 32,
+            "Permutation of u32 cannot exceed 32 entries."
+        );
+        debug_assert!(
+            perm.iter().all(|x| x < &32),
+            "Permutation indices for u32 cannot exceed 31."
+        );
+
+        perm.iter()
+            .rev()
+            .enumerate()
+            .map(|(bit, offset)| ((self >> offset) & 0b1) << bit)
+            .sum()
+    }
+}
