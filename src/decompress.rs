@@ -8,6 +8,7 @@ enum CrInstr {
 
 enum CiInstr {
     Addi,
+    Lw,
 }
 
 fn build_rtype(instruction_type: CrInstr, rd: u16, rs1: u16, rs2: u16) -> u32 {
@@ -35,6 +36,7 @@ fn build_itype(instruction_type: CiInstr, rd: u16, rs1: u16, imm: u16) -> u32 {
 
     match instruction_type {
         CiInstr::Addi => mold(imm, rs1, 0b000, rd, 0b0010011),
+        CiInstr::Lw => mold(imm, Register::Sp as u16, 0b010, rd, 0b0000011),
     }
 }
 pub fn decompress_q0(i: u16) -> DecompressionResult {
@@ -92,7 +94,14 @@ pub fn decompress_q2(i: u16) -> DecompressionResult {
     match (i >> 13) & 0b111 {
         0b000 /* C.SLLI{,64} */ => Err(DecodingError::Unimplemented),
         0b001 /* C.FLDSP */ => Err(DecodingError::Unimplemented),
-        0b010 /* C.LWSP */ => Err(DecodingError::Unimplemented),
+        0b010 /* C.LWSP */ => {
+            let rd = (i >> 7) & 0b11111;
+            let imm = get_imm(i, InstrFormat::Ci).inv_permute(&[5, 4, 3, 2, 7, 6]);
+
+            assert!(rd != 0, "rd == 0 is reserved!");
+
+            Ok(build_itype(CiInstr::Lw, rd, 0, imm))
+        }
         0b011 /* C.LDSP */ => Err(DecodingError::Unimplemented),
         0b100 /* C.{RJ,MV,EBREAK,JALR,ADD} */ => Err(DecodingError::Unimplemented),
         0b101 /* C.FSDSP */ => Err(DecodingError::Unimplemented),
