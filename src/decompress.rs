@@ -40,8 +40,19 @@ fn build_itype(instruction_type: CiInstr, rd: u16, rs1: u16, imm: u16) -> u32 {
     }
 }
 pub fn decompress_q0(i: u16) -> DecompressionResult {
+    if i == 0 {
+        return Err(DecodingError::Illegal);
+    }
+
     match (i >> 13) & 0b111 {
-        0b000 => Err(DecodingError::Illegal),
+        0b000 /* C.ADDI4SPN */ => {
+            let imm = get_imm(i, InstrFormat::Ciw).inv_permute(&[5, 4, 9, 8, 7, 6, 2, 3]);
+            let rd = 8 + ((i >> 2) & 0b111);
+
+            assert!(imm != 0, "imm == 0 is reserved");
+
+            Ok(build_itype(CiInstr::Addi, rd, Register::Sp as u16, imm))
+        }
         0b001 /* C.FLD */ => Err(DecodingError::Unimplemented),
         0b010 /* C.LW */ => Err(DecodingError::Unimplemented),
         0b011 /* C.LD */ => Err(DecodingError::Unimplemented),
@@ -113,12 +124,14 @@ pub fn decompress_q2(i: u16) -> DecompressionResult {
 
 enum InstrFormat {
     Ci,
+    Ciw,
 }
 
 #[inline(always)]
 fn get_imm(i: u16, fmt: InstrFormat) -> u16 {
     match fmt {
         InstrFormat::Ci => ((i >> 7) & 0b10_0000) | ((i >> 2) & 0b1_1111),
+        InstrFormat::Ciw => (i >> 5) & 0b1111_1111,
     }
 }
 
