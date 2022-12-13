@@ -14,6 +14,7 @@ enum CiInstr {
     Lw,
     Ld,
     Jalr,
+    Slli,
 }
 
 enum CbInstr {
@@ -60,6 +61,7 @@ fn build_itype(instruction_type: CiInstr, rd: u16, rs1: u16, imm: u16) -> u32 {
         CiInstr::Lw => mold(imm, rs1, 0b010, rd, 0b0000011),
         CiInstr::Ld => mold(imm, rs1, 0b011, rd, 0b0000011),
         CiInstr::Jalr => mold(imm, rs1, 0b000, rd, 0b1100111),
+        CiInstr::Slli => mold(imm, rs1, 0b001, rd, 0b0010011),
     }
 }
 
@@ -254,7 +256,15 @@ pub fn decompress_q1(i: u16) -> DecompressionResult {
 
 pub fn decompress_q2(i: u16) -> DecompressionResult {
     match (i >> 13) & 0b111 {
-        0b000 /* C.SLLI{,64} */ => Err(DecodingError::Unimplemented),
+        0b000 /* C.SLLI */ => {
+            let shamt = get_imm(i, InstrFormat::Ci);
+            let rd_rs1 = (i >> 7) & 0b1_1111;
+
+            assert!(rd_rs1 != 0, "rd_rs1 == 0 is reserved!");
+            assert!(shamt != 0, "shamt == 0 is a HINT!");
+
+            Ok(build_itype(CiInstr::Slli, rd_rs1, rd_rs1, shamt))
+        },
         0b001 /* C.FLDSP */ => Err(DecodingError::Unimplemented),
         0b010 /* C.LWSP */ => {
             let rd = (i >> 7) & 0b11111;
