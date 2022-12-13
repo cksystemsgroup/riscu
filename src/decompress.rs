@@ -22,6 +22,10 @@ enum CsInstr {
     Sw,
 }
 
+enum CuInstr {
+    Lui,
+}
+
 fn build_rtype(instruction_type: CrInstr, rd: u16, rs1: u16, rs2: u16) -> u32 {
     let mold = |funct7: u32, rs2: u16, rs1: u16, funct3: u32, rd: u16, opcode: u32| -> u32 {
         let rd: u32 = rd.into();
@@ -107,6 +111,19 @@ fn build_btype(instruction_type: CbInstr, rs1: u16, imm: u16) -> u32 {
     }
 }
 
+fn build_utype(instruction_type: CuInstr, rd: u16, imm: u32) -> u32 {
+    let mold = |imm: u32, rd: u16, opcode: u32| -> u32 {
+        let rd: u32 = rd.into();
+        let imm: u32 = imm >> 12;
+
+        (imm << 12) | (rd << 7) | opcode
+    };
+
+    match instruction_type {
+        CuInstr::Lui => mold(imm, rd, 0b0110111),
+    }
+}
+
 pub fn decompress_q0(i: u16) -> DecompressionResult {
     if i == 0 {
         return Err(DecodingError::Illegal);
@@ -152,7 +169,21 @@ pub fn decompress_q1(i: u16) -> DecompressionResult {
 
             Ok(build_itype(CiInstr::Addi, rd, Register::Zero as u16, imm))
         }
-        0b011 /* C.LUI/C.ADDI16SP */ => Err(DecodingError::Unimplemented),
+        0b011 /* C.LUI/C.ADDI16SP */ => {
+            let rd = (i >> 7) & 0b1_1111;
+            let imm = get_imm(i, InstrFormat::Ci);
+
+            assert!(rd != 0, "rd = 0 is reserved!");
+
+            if rd == 2 {
+                // ADDI16SP
+                Err(DecodingError::Unimplemented)
+            } else {
+                let imm = (imm as u32).inv_permute(&[17, 16, 15, 14, 13, 12]);
+
+                Ok(build_utype(CuInstr::Lui, rd, sign_extend32(imm, 18)))
+            }
+        },
         0b100 /* MISC-ALU */ => match (i >> 10) & 0b11 {
             0b00 => Err(DecodingError::Unimplemented),
             0b01 /* C.SRAI */ => {
@@ -336,6 +367,8 @@ impl Permutable for u32 {
     }
 }
 
+/// Perform sign-extension for the value `n` based on bit `b`.
+/// Note: the bit `b` is one-indexed.
 fn sign_extend(n: u16, b: u32) -> u16 {
     assert!(n <= 2_u16.pow(b));
     assert!(0 < b && b < 16);
@@ -344,5 +377,18 @@ fn sign_extend(n: u16, b: u32) -> u16 {
         n
     } else {
         n.wrapping_sub(2_u16.pow(b))
+    }
+}
+
+/// Perform sign-extension for the value `n` based on bit `b`.
+/// Note: the bit `b` is one-indexed.
+fn sign_extend32(n: u32, b: u32) -> u32 {
+    assert!(n <= 2_u32.pow(b));
+    assert!(0 < b && b < 32);
+
+    if n < 2_u32.pow(b - 1) {
+        n
+    } else {
+        n.wrapping_sub(2_u32.pow(b))
     }
 }
