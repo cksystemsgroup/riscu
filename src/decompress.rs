@@ -15,6 +15,7 @@ enum CiInstr {
 
 enum CbInstr {
     Beq,
+    Bne,
 }
 
 enum CsInstr {
@@ -102,6 +103,7 @@ fn build_btype(instruction_type: CbInstr, rs1: u16, imm: u16) -> u32 {
 
     match instruction_type {
         CbInstr::Beq => mold(imm, rs1, Register::Zero as u16, 0b000, 0b1100011),
+        CbInstr::Bne => mold(imm, rs1, Register::Zero as u16, 0b001, 0b1100011),
     }
 }
 
@@ -187,7 +189,12 @@ pub fn decompress_q1(i: u16) -> DecompressionResult {
 
             Ok(build_btype(CbInstr::Beq, rs1, offset))
         },
-        0b111 /* C.BNEZ */ => Err(DecodingError::Unimplemented),
+        0b111 /* C.BNEZ */ => {
+            let rs1 = 8 + ((i >> 7) & 0b111);
+            let offset = get_imm(i, InstrFormat::Cb).inv_permute(&[8, 4, 3, 7, 6, 2, 1, 5]);
+
+            Ok(build_btype(CbInstr::Bne, rs1, offset))
+        },
         _ => unreachable!(),
     }
 }
