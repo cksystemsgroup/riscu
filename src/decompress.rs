@@ -143,7 +143,13 @@ pub fn decompress_q0(i: u16) -> DecompressionResult {
             Ok(build_itype(CiInstr::Addi, rd, Register::Sp as u16, imm))
         }
         0b001 /* C.FLD */ => Err(DecodingError::Unimplemented),
-        0b010 /* C.LW */ => Err(DecodingError::Unimplemented),
+        0b010 /* C.LW */ => {
+            let imm = get_imm(i, InstrFormat::Cl).inv_permute(&[5, 3, 2, 6]);
+            let rd = 8 + ((i >> 2) & 0b111);
+            let rs1 = 8 + ((i >> 7) & 0b111);
+
+            Ok(build_itype(CiInstr::Lw, rd, rs1, imm))
+        },
         0b011 /* C.LD */ => {
             let imm = get_imm(i, InstrFormat::Cl).inv_permute(&[5, 4, 3, 7, 6]);
             let rd = 8 + ((i >> 2) & 0b111);
