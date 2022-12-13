@@ -172,7 +172,13 @@ pub fn decompress_q0(i: u16) -> DecompressionResult {
 
             Ok(build_stype(CsInstr::Sw, rs1, rs2, imm))
         },
-        0b111 /* C.SD */ => Err(DecodingError::Unimplemented),
+        0b111 /* C.SD */ => {
+            let imm = get_imm(i, InstrFormat::Cs).inv_permute(&[5, 4, 3, 7, 6]);
+            let rs2 = 8 + ((i >> 2) & 0b111);
+            let rs1 = 8 + ((i >> 7) & 0b111);
+
+            Ok(build_stype(CsInstr::Sd, rs1, rs2, imm))
+        },
         _ => unreachable!(),
     }
 }
