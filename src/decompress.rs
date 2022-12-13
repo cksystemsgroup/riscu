@@ -346,6 +346,7 @@ enum InstrFormat {
     Css,
     Ciw,
     Cl,
+    Cs,
     Cb,
     Cj,
 }
@@ -357,6 +358,7 @@ fn get_imm(i: u16, fmt: InstrFormat) -> u16 {
         InstrFormat::Css => (i >> 7) & 0b11_1111,
         InstrFormat::Ciw => (i >> 5) & 0b1111_1111,
         InstrFormat::Cl => ((i >> 8) & 0b1_1100) | ((i >> 5) & 0b11),
+        InstrFormat::Cs => ((i >> 8) & 0b1_1100) | ((i >> 5) & 0b11),
         InstrFormat::Cb => ((i >> 5) & 0b1110_0000) | ((i >> 2) & 0b1_1111),
         InstrFormat::Cj => (i >> 2) & 0b111_1111_1111,
     }
