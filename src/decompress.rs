@@ -185,10 +185,13 @@ pub fn decompress_q1(i: u16) -> DecompressionResult {
 
             assert!(rd != 0, "rd = 0 is reserved!");
 
-            if rd == 2 {
-                // ADDI16SP
-                Err(DecodingError::Unimplemented)
-            } else {
+            if rd == 2 /* C.ADDI16SP */ {
+                let imm = imm.inv_permute(&[9, 4, 6, 8, 7, 6, 5]);
+
+                assert!(imm != 0, "imm = 0 is reserved!");
+
+                Ok(build_itype(CiInstr::Addi, rd, rd, imm))
+            } else /* C.LUI */{
                 let imm = (imm as u32).inv_permute(&[17, 16, 15, 14, 13, 12]);
 
                 Ok(build_utype(CuInstr::Lui, rd, sign_extend32(imm, 18)))
@@ -261,23 +264,20 @@ pub fn decompress_q2(i: u16) -> DecompressionResult {
             Ok(build_itype(CiInstr::Ld, rd, Register::Sp as u16, imm))
         },
         0b100 /* C.{JR,MV,EBREAK,JALR,ADD} */ => {
-            match ((i >> 12) & 0b1, (i >> 2) & 0b1_1111) {
-                (0, 0) /* C.JR */ => {
-                    let rs1 = (i >> 7) & 0b1_1111;
-                    let imm = 0;
-
+            match ((i >> 12) & 0b1, (i >> 7) & 0b1_1111, (i >> 2) & 0b1_1111) {
+                (0, rs1, 0) /* C.JR */ => {
                     assert!(rs1 != 0, "rs1 == 0 is reserved!");
 
-                    Ok(build_itype(CiInstr::Jalr, Register::Zero as u16, rs1, imm))
+                    Ok(build_itype(CiInstr::Jalr, Register::Zero as u16, rs1, 0))
                 },
-                (0, rs2) /* C.MV */ => {
-                    let rd = (i >> 7) & 0b1_1111;
-
+                (0, rd, rs2) /* C.MV */ => {
                     assert!(rd != 0, "rs1 == 0 is reserved!");
 
                     Ok(build_rtype(CrInstr::Add, rd, Register::Zero as u16, rs2))
                 },
-                (_, _) => Err(DecodingError::Unimplemented),
+                (1, 0, 0) /* C.EBREAK */ => Err(DecodingError::Unimplemented),
+                (1, rs1, 0) /* C.JALR */ => Ok(build_itype(CiInstr::Jalr, Register::Ra as u16, rs1, 0)),
+                (_, _, _) => Err(DecodingError::Unimplemented),
             }
         },
         0b101 /* C.FSDSP */ => Err(DecodingError::Unimplemented),
