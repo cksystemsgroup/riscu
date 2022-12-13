@@ -29,14 +29,25 @@ impl Iterator for LocationIter<'_> {
     type Item = u64;
 
     fn next(&mut self) -> Option<Self::Item> {
+        if (self.current_index as usize) >= self.memory_view.len() {
+            // Ensure that we never go out of bound.
+            return None;
+        }
+
         match instruction_length(self.current_word()) {
             2 => {
                 self.current_index += 2;
                 Some(self.address + self.current_index - 2)
             }
             4 => {
-                self.current_index += 4;
-                Some(self.address + self.current_index - 4)
+                if (self.current_index as usize) <= self.memory_view.len() - 4 {
+                    self.current_index += 4;
+                    Some(self.address + self.current_index - 4)
+                } else {
+                    // There should be a 4 byte instruction but the end of the
+                    // slice is less than 4 byte long!
+                    panic!("Unaligned instruction!");
+                }
             }
             l => panic!("Unimplemented instruction length: {}", l),
         }
