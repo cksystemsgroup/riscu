@@ -19,7 +19,7 @@ enum CbInstr {
 }
 
 enum CsInstr {
-    Sw,
+    Sd,
 }
 
 enum CuInstr {
@@ -86,7 +86,7 @@ fn build_stype(instruction_type: CsInstr, rs1: u16, rs2: u16, imm: u16) -> u32 {
     };
 
     match instruction_type {
-        CsInstr::Sw => mold(rs2, rs1, 0b010, imm, 0b0100011),
+        CsInstr::Sd => mold(rs2, rs1, 0b011, imm, 0b0100011),
     }
 }
 
@@ -262,7 +262,7 @@ pub fn decompress_q2(i: u16) -> DecompressionResult {
             let imm = get_imm(i, InstrFormat::Css).inv_permute(&[5,4,3,8,7,6]);
             let rs2 = (i >> 2) & 0b1_1111;
 
-            Ok(build_stype(CsInstr::Sw, Register::Sp as u16, rs2, imm))
+            Ok(build_stype(CsInstr::Sd, Register::Sp as u16, rs2, imm))
         },
         _ => unreachable!(),
     }
