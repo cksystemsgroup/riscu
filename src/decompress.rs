@@ -173,7 +173,7 @@ pub fn decompress_q1(i: u16) -> DecompressionResult {
         0b001 /* C.ADDIW */ => Err(DecodingError::Unimplemented),
         0b010 /* C.LI */ => {
             let rd = (i >> 7) & 0b11111;
-            let imm = get_imm(i, InstrFormat::Ci);
+            let imm = sign_extend(get_imm(i, InstrFormat::Ci), 6);
 
             assert!(rd != 0, "rd == 0 is reserved!");
 
