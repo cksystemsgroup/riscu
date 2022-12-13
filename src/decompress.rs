@@ -5,6 +5,7 @@ type DecompressionResult = Result<u32, DecodingError>;
 enum CrInstr {
     Sub,
     Srai,
+    Add,
 }
 
 enum CiInstr {
@@ -39,6 +40,7 @@ fn build_rtype(instruction_type: CrInstr, rd: u16, rs1: u16, rs2: u16) -> u32 {
     match instruction_type {
         CrInstr::Sub => mold(0b0100000, rs2, rs1, 0b000, rd, 0b0110011),
         CrInstr::Srai => mold(0b0100000, rs2, rs1, 0b101, rd, 0b0010011),
+        CrInstr::Add => mold(0b0000000, rs2, rs1, 0b000, rd, 0b0110011),
     }
 }
 
@@ -254,13 +256,20 @@ pub fn decompress_q2(i: u16) -> DecompressionResult {
         },
         0b100 /* C.{JR,MV,EBREAK,JALR,ADD} */ => {
             match ((i >> 12) & 0b1, (i >> 2) & 0b1_1111) {
-                (0, 0) /* C.JR*/ => {
+                (0, 0) /* C.JR */ => {
                     let rs1 = (i >> 7) & 0b1_1111;
                     let imm = 0;
 
                     assert!(rs1 != 0, "rs1 == 0 is reserved!");
 
                     Ok(build_itype(CiInstr::Jalr, Register::Zero as u16, rs1, imm))
+                },
+                (0, rs2) /* C.MV */ => {
+                    let rd = (i >> 7) & 0b1_1111;
+
+                    assert!(rd != 0, "rs1 == 0 is reserved!");
+
+                    Ok(build_rtype(CrInstr::Add, rd, Register::Zero as u16, rs2))
                 },
                 (_, _) => Err(DecodingError::Unimplemented),
             }
