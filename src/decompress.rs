@@ -17,6 +17,10 @@ enum CbInstr {
     Beq,
 }
 
+enum CsInstr {
+    Sw,
+}
+
 fn build_rtype(instruction_type: CrInstr, rd: u16, rs1: u16, rs2: u16) -> u32 {
     let mold = |funct7: u32, rs2: u16, rs1: u16, funct3: u32, rd: u16, opcode: u32| -> u32 {
         let rd: u32 = rd.into();
@@ -64,6 +68,21 @@ fn build_jtype(imm: u16) -> u32 {
     };
 
     mold(imm, Register::Zero as u16, 0b1101111)
+}
+
+fn build_stype(instruction_type: CsInstr, rs1: u16, rs2: u16, imm: u16) -> u32 {
+    let mold = |rs2: u16, rs1: u16, funct3: u32, imm: u16, opcode: u32| -> u32 {
+        let immh: u32 = (imm >> 5).into();
+        let imml: u32 = (imm & 0b1_1111).into();
+        let rs1: u32 = rs1.into();
+        let rs2: u32 = rs2.into();
+
+        (immh << 25) | (rs2 << 20) | (rs1 << 15) | (funct3 << 12) | (imml << 7) | opcode
+    };
+
+    match instruction_type {
+        CsInstr::Sw => mold(rs2, rs1, 0b010, imm, 0b0100011),
+    }
 }
 
 fn build_btype(instruction_type: CbInstr, rs1: u16, imm: u16) -> u32 {
@@ -201,13 +220,19 @@ pub fn decompress_q2(i: u16) -> DecompressionResult {
         },
         0b101 /* C.FSDSP */ => Err(DecodingError::Unimplemented),
         0b110 /* C.SWSP */ => Err(DecodingError::Unimplemented),
-        0b111 /* C.SDSP */ => Err(DecodingError::Unimplemented),
+        0b111 /* C.SDSP */ => {
+            let imm = get_imm(i, InstrFormat::Css).inv_permute(&[5,4,3,8,7,6]);
+            let rs2 = (i >> 2) & 0b1_1111;
+
+            Ok(build_stype(CsInstr::Sw, Register::Sp as u16, rs2, imm))
+        },
         _ => unreachable!(),
     }
 }
 
 enum InstrFormat {
     Ci,
+    Css,
     Ciw,
     Cb,
     Cj,
@@ -217,6 +242,7 @@ enum InstrFormat {
 fn get_imm(i: u16, fmt: InstrFormat) -> u16 {
     match fmt {
         InstrFormat::Ci => ((i >> 7) & 0b10_0000) | ((i >> 2) & 0b1_1111),
+        InstrFormat::Css => (i >> 7) & 0b11_1111,
         InstrFormat::Ciw => (i >> 5) & 0b1111_1111,
         InstrFormat::Cb => ((i >> 5) & 0b1110_0000) | ((i >> 2) & 0b1_1111),
         InstrFormat::Cj => (i >> 2) & 0b111_1111_1111,
@@ -234,11 +260,11 @@ trait Permutable {
 impl Permutable for u16 {
     fn inv_permute(self, perm: &[usize]) -> Self {
         debug_assert!(
-            perm.len() <= 16, 
+            perm.len() <= 16,
             "Permutation of u16 cannot exceed 16 entries."
         );
         debug_assert!(
-            perm.iter().all(|x| x < &16), 
+            perm.iter().all(|x| x < &16),
             "Permutation indices for u16 cannot exceed 15."
         );
 
