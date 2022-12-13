@@ -144,7 +144,13 @@ pub fn decompress_q0(i: u16) -> DecompressionResult {
         }
         0b001 /* C.FLD */ => Err(DecodingError::Unimplemented),
         0b010 /* C.LW */ => Err(DecodingError::Unimplemented),
-        0b011 /* C.LD */ => Err(DecodingError::Unimplemented),
+        0b011 /* C.LD */ => {
+            let imm = get_imm(i, InstrFormat::Cl).inv_permute(&[5, 4, 3, 7, 6]);
+            let rd = 8 + ((i >> 2) & 0b111);
+            let rs1 = 8 + ((i >> 7) & 0b111);
+
+            Ok(build_itype(CiInstr::Ld, rd, rs1, imm))
+        },
         0b100 => Err(DecodingError::Reserved),
         0b101 /* C.FSD */ => Err(DecodingError::Unimplemented),
         0b110 /* C.SW */ => Err(DecodingError::Unimplemented),
@@ -290,6 +296,7 @@ enum InstrFormat {
     Ci,
     Css,
     Ciw,
+    Cl,
     Cb,
     Cj,
 }
@@ -300,6 +307,7 @@ fn get_imm(i: u16, fmt: InstrFormat) -> u16 {
         InstrFormat::Ci => ((i >> 7) & 0b10_0000) | ((i >> 2) & 0b1_1111),
         InstrFormat::Css => (i >> 7) & 0b11_1111,
         InstrFormat::Ciw => (i >> 5) & 0b1111_1111,
+        InstrFormat::Cl => ((i >> 8) & 0b1_1100) | ((i >> 5) & 0b11),
         InstrFormat::Cb => ((i >> 5) & 0b1110_0000) | ((i >> 2) & 0b1_1111),
         InstrFormat::Cj => (i >> 2) & 0b111_1111_1111,
     }
