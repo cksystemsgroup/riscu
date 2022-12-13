@@ -6,6 +6,7 @@ enum CrInstr {
     Sub,
     Add,
     Or,
+    And,
 }
 
 enum CiInstr {
@@ -45,6 +46,7 @@ fn build_rtype(instruction_type: CrInstr, rd: u16, rs1: u16, rs2: u16) -> u32 {
         CrInstr::Sub => mold(0b0100000, rs2, rs1, 0b000, rd, 0b0110011),
         CrInstr::Add => mold(0b0000000, rs2, rs1, 0b000, rd, 0b0110011),
         CrInstr::Or => mold(0b0000000, rs2, rs1, 0b110, rd, 0b0110011),
+        CrInstr::And => mold(0b0000000, rs2, rs1, 0b111, rd, 0b0110011),
     }
 }
 
@@ -248,6 +250,7 @@ pub fn decompress_q1(i: u16) -> DecompressionResult {
                 match ((i >> 12) & 0b1, (i >> 5) & 0b11) {
                     (0, 0b00) => Ok(build_rtype(CrInstr::Sub, rs1_rd, rs1_rd, rs2)),
                     (0, 0b10) => Ok(build_rtype(CrInstr::Or, rs1_rd, rs1_rd, rs2)),
+                    (0, 0b11) => Ok(build_rtype(CrInstr::And, rs1_rd, rs1_rd, rs2)),
                     (1, 0b10) => Err(DecodingError::Reserved),
                     (1, 0b11) => Err(DecodingError::Reserved),
                     _ => unreachable!(),
