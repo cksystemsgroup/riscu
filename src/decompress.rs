@@ -10,6 +10,7 @@ enum CrInstr {
 
 enum CiInstr {
     Addi,
+    Addiw,
     Lw,
     Ld,
     Jalr,
@@ -58,6 +59,7 @@ fn build_itype(instruction_type: CiInstr, rd: u16, rs1: u16, imm: u16) -> u32 {
 
     match instruction_type {
         CiInstr::Addi => mold(imm, rs1, 0b000, rd, 0b0010011),
+        CiInstr::Addiw => mold(imm, rs1, 0b000, rd, 0b0011011),
         CiInstr::Lw => mold(imm, rs1, 0b010, rd, 0b0000011),
         CiInstr::Ld => mold(imm, rs1, 0b011, rd, 0b0000011),
         CiInstr::Jalr => mold(imm, rs1, 0b000, rd, 0b1100111),
@@ -194,7 +196,14 @@ pub fn decompress_q1(i: u16) -> DecompressionResult {
 
             Ok(build_itype(CiInstr::Addi, dest, dest, imm))
         },
-        0b001 /* C.ADDIW */ => Err(DecodingError::Unimplemented),
+        0b001 /* C.ADDIW */ => {
+            let imm = sign_extend(get_imm(i, InstrFormat::Ci), 6);
+            let dest = (i >> 7) & 0b1_1111;
+
+            assert!(dest != 0, "dest == 0 is reserved!");
+
+            Ok(build_itype(CiInstr::Addiw, dest, dest, imm))
+        },
         0b010 /* C.LI */ => {
             let rd = (i >> 7) & 0b11111;
             let imm = sign_extend(get_imm(i, InstrFormat::Ci), 6);
