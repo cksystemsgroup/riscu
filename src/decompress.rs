@@ -277,6 +277,11 @@ pub fn decompress_q2(i: u16) -> DecompressionResult {
                 },
                 (1, 0, 0) /* C.EBREAK */ => Err(DecodingError::Unimplemented),
                 (1, rs1, 0) /* C.JALR */ => Ok(build_itype(CiInstr::Jalr, Register::Ra as u16, rs1, 0)),
+                (1, rd, rs2) /* C.ADD */ => {
+                    assert!(!(rd == 0 && rs2 != 0), "rd == 0 && rs2 == 0 is a HINT!");
+
+                    Ok(build_rtype(CrInstr::Add, rd, rd, rs2))
+                },
                 (_, _, _) => Err(DecodingError::Unimplemented),
             }
         },
