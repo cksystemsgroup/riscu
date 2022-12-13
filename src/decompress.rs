@@ -23,6 +23,7 @@ enum CbInstr {
 }
 
 enum CsInstr {
+    Sw,
     Sd,
 }
 
@@ -94,6 +95,7 @@ fn build_stype(instruction_type: CsInstr, rs1: u16, rs2: u16, imm: u16) -> u32 {
     };
 
     match instruction_type {
+        CsInstr::Sw => mold(rs2, rs1, 0b010, imm, 0b0100011),
         CsInstr::Sd => mold(rs2, rs1, 0b011, imm, 0b0100011),
     }
 }
@@ -163,7 +165,13 @@ pub fn decompress_q0(i: u16) -> DecompressionResult {
         },
         0b100 => Err(DecodingError::Reserved),
         0b101 /* C.FSD */ => Err(DecodingError::Unimplemented),
-        0b110 /* C.SW */ => Err(DecodingError::Unimplemented),
+        0b110 /* C.SW */ => {
+            let imm = get_imm(i, InstrFormat::Cl).inv_permute(&[5, 4, 3, 7, 6]);
+            let rs2 = 8 + ((i >> 2) & 0b111);
+            let rs1 = 8 + ((i >> 7) & 0b111);
+
+            Ok(build_stype(CsInstr::Sw, rs1, rs2, imm))
+        },
         0b111 /* C.SD */ => Err(DecodingError::Unimplemented),
         _ => unreachable!(),
     }
