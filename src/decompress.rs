@@ -231,13 +231,13 @@ pub fn decompress_q1(i: u16) -> DecompressionResult {
             let rs1 = 8 + ((i >> 7) & 0b111);
             let offset = get_imm(i, InstrFormat::Cb).inv_permute(&[8, 4, 3, 7, 6, 2, 1, 5]);
 
-            Ok(build_btype(CbInstr::Beq, rs1, offset))
+            Ok(build_btype(CbInstr::Beq, rs1, sign_extend(offset, 9)))
         },
         0b111 /* C.BNEZ */ => {
             let rs1 = 8 + ((i >> 7) & 0b111);
             let offset = get_imm(i, InstrFormat::Cb).inv_permute(&[8, 4, 3, 7, 6, 2, 1, 5]);
 
-            Ok(build_btype(CbInstr::Bne, rs1, offset))
+            Ok(build_btype(CbInstr::Bne, rs1, sign_extend(offset, 9)))
         },
         _ => unreachable!(),
     }
