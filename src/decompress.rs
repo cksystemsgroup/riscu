@@ -10,6 +10,7 @@ enum CrInstr {
 enum CiInstr {
     Addi,
     Lw,
+    Ld,
     Jalr,
 }
 
@@ -52,7 +53,8 @@ fn build_itype(instruction_type: CiInstr, rd: u16, rs1: u16, imm: u16) -> u32 {
 
     match instruction_type {
         CiInstr::Addi => mold(imm, rs1, 0b000, rd, 0b0010011),
-        CiInstr::Lw => mold(imm, Register::Sp as u16, 0b010, rd, 0b0000011),
+        CiInstr::Lw => mold(imm, rs1, 0b010, rd, 0b0000011),
+        CiInstr::Ld => mold(imm, rs1, 0b011, rd, 0b0000011),
         CiInstr::Jalr => mold(imm, rs1, 0b000, rd, 0b1100111),
     }
 }
@@ -242,7 +244,14 @@ pub fn decompress_q2(i: u16) -> DecompressionResult {
 
             Ok(build_itype(CiInstr::Lw, rd, 0, imm))
         }
-        0b011 /* C.LDSP */ => Err(DecodingError::Unimplemented),
+        0b011 /* C.LDSP */ => {
+            let imm = get_imm(i, InstrFormat::Ci).inv_permute(&[5,4,3,8,7,6]);
+            let rd = (i >> 7) & 0b1_1111;
+
+            assert!(rd != 0, "rd == 0 is reserved!");
+
+            Ok(build_itype(CiInstr::Ld, rd, Register::Sp as u16, imm))
+        },
         0b100 /* C.{JR,MV,EBREAK,JALR,ADD} */ => {
             match ((i >> 12) & 0b1, (i >> 2) & 0b1_1111) {
                 (0, 0) /* C.JR*/ => {
