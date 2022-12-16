@@ -18,7 +18,7 @@ impl LocationIter<'_> {
         }
     }
 
-    fn current_word(&self) -> u16 {
+    fn current_hword(&self) -> u16 {
         let idx: usize = self.current_index as usize;
         let begin = &self.memory_view[idx..idx + 2];
         LittleEndian::read_u16(begin)
@@ -34,7 +34,7 @@ impl Iterator for LocationIter<'_> {
             return None;
         }
 
-        match instruction_length(self.current_word()) {
+        match instruction_length(self.current_hword()) {
             2 => {
                 self.current_index += 2;
                 Some(self.address + self.current_index - 2)
@@ -68,22 +68,22 @@ impl InstructionIter<'_> {
         }
     }
 
-    fn current_word(&self) -> u16 {
+    fn current_hword(&self) -> u16 {
         let idx: usize = self.current_index as usize;
         let begin = &self.memory_view[idx..idx + 2];
 
         LittleEndian::read_u16(begin)
     }
 
-    fn fetch_word(&mut self) -> u16 {
-        let word = self.current_word();
+    fn fetch_hword(&mut self) -> u16 {
+        let half_word = self.current_hword();
 
         self.current_index += 2;
 
-        word
+        half_word
     }
 
-    fn fetch_dword(&mut self) -> u32 {
+    fn fetch_word(&mut self) -> u32 {
         let idx: usize = self.current_index as usize;
         let begin = &self.memory_view[idx..idx + 4];
 
@@ -102,9 +102,9 @@ impl Iterator for InstructionIter<'_> {
         }
 
         Some(
-            decode(match instruction_length(self.current_word()) {
-                2 => self.fetch_word().into(),
-                4 => self.fetch_dword(),
+            decode(match instruction_length(self.current_hword()) {
+                2 => self.fetch_hword().into(),
+                4 => self.fetch_word(),
                 l => panic!("Unimplemented instruction length: {}", l),
             })
             .expect("valid instruction"),
