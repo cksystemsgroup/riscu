@@ -68,5 +68,9 @@ mod tests {
         // C.LW
         assert_eq!(decode(0x4298).unwrap(), Lw(IType(0x0006a703))); // lw a4, 0(a3)
         assert_eq!(decode(0x483c).unwrap(), Lw(IType(0x05042783))); // lw a5, 80(s0)
+
+        // C.LD
+        assert_eq!(decode(0x6398).unwrap(), Ld(IType(0x0007b703))); // ld a4, 0(a5)
+        assert_eq!(decode(0x6b9c).unwrap(), Ld(IType(0x0107b783))); // ld a5, 16(a5)
     }
 }

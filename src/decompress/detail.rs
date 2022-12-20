@@ -20,7 +20,7 @@ pub(super) fn decompress_load(i: u16, instruction_type: CiInstr) -> Decompressio
 
     Ok(match instruction_type {
         CiInstr::Lw => build_itype(CiInstr::Lw, rd, rs1, imm.inv_permute(&[5, 4, 3, 2, 6])),
-        CiInstr::Ld => build_itype(CiInstr::Lw, rd, rs1, imm.inv_permute(&[5, 4, 3, 7, 6])),
+        CiInstr::Ld => build_itype(CiInstr::Ld, rd, rs1, imm.inv_permute(&[5, 4, 3, 7, 6])),
         _ => unreachable!(),
     })
 }
