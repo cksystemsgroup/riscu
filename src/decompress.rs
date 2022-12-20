@@ -44,12 +44,12 @@ pub fn decompress_q1(i: u16) -> DecompressionResult {
 pub fn decompress_q2(i: u16) -> DecompressionResult {
     match (i >> 13) & 0b111 {
         0b000 => decompress_slli(i),
-        0b001 /* C.FLDSP */ => Err(DecodingError::Unimplemented),
+        0b001 => Err(DecodingError::Unimplemented), // C.FLSDP
         0b010 => decompress_load_sp(i, CiInstr::Lw),
         0b011 => decompress_load_sp(i, CiInstr::Ld),
         0b100 => decompress_jr_mv_add(i),
-        0b101 /* C.FSDSP */ => Err(DecodingError::Unimplemented),
-        0b110 /* C.SWSP */ => Err(DecodingError::Unimplemented),
+        0b101 => Err(DecodingError::Unimplemented), // C.FSDSP
+        0b110 => Err(DecodingError::Unimplemented), // C.SWSP
         0b111 => decompress_store_sp(i, CsInstr::Sd),
         _ => unreachable!(),
     }
