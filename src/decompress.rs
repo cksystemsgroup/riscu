@@ -61,7 +61,7 @@ mod tests {
 
     #[test]
     fn test_quadrant0() {
-        // C.ADDI4SPN 
+        // C.ADDI4SPN
         assert_eq!(decode(0x002c).unwrap(), Addi(IType(0x00810593))); // addi a1, sp, 8
 
         // C.LFD unimplemented
