@@ -54,3 +54,19 @@ pub fn decompress_q2(i: u16) -> DecompressionResult {
         _ => unreachable!(),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{decode, types::*, Instruction::*};
+
+    #[test]
+    fn test_quadrant0() {
+        // C.ADDI4SPN 
+        assert_eq!(decode(0x002c).unwrap(), Addi(IType(0x00810593))); // addi a1, sp, 8
+
+        // C.LFD unimplemented
+        // C.LW
+        assert_eq!(decode(0x4298).unwrap(), Lw(IType(0x0006a703))); // lw a4, 0(a3)
+        assert_eq!(decode(0x483c).unwrap(), Lw(IType(0x05042783))); // lw a5, 80(s0)
+    }
+}
