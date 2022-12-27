@@ -70,11 +70,15 @@ mod tests {
         assert_eq!(decode(0x4298).unwrap(), Lw(IType(0x0006a703))); // lw a4, 0(a3)
         assert_eq!(decode(0x483c).unwrap(), Lw(IType(0x05042783))); // lw a5, 80(s0)
 
+        // C.LW: check that no sign extension happens (smoke test)
+        assert_eq!(decode(0x5ffc).unwrap(), Lw(IType(0x07c7a783))); // lw a5, 124(a5)
+
         // C.LD
         assert_eq!(decode(0x6398).unwrap(), Ld(IType(0x0007b703))); // ld a4, 0(a5)
         assert_eq!(decode(0x6b9c).unwrap(), Ld(IType(0x0107b783))); // ld a5, 16(a5)
 
-        // Reserved
+        // C.LD: check that no sign extension happens (smoke test)
+        assert_eq!(decode(0x7ffc).unwrap(), Ld(IType(0x0f87b783))); // ld a5, 248(a5)
 
         // C.FSD unimplemented
 
@@ -82,8 +86,14 @@ mod tests {
         assert_eq!(decode(0xc298).unwrap(), Sw(SType(0x00e6a023))); // sw a4, 0(a3)
         assert_eq!(decode(0xd01c).unwrap(), Sw(SType(0x02f42023))); // sw a5, 32(s0)
 
+        // C.SW: check that no sign extension happens (smoke test)
+        assert_eq!(decode(0xdffc).unwrap(), Sw(SType(0x06f7ae23))); // sw a5, 124(a5)
+
         // C.SD
         assert_eq!(decode(0xe398).unwrap(), Sd(SType(0x00e7b023))); // sd a4, 0(a5)
         assert_eq!(decode(0xee98).unwrap(), Sd(SType(0x00e6bc23))); // sd a4, 24(a3)
+
+        // C.SD: check that no sign extension happens (smoke test)
+        assert_eq!(decode(0xfffc).unwrap(), Sd(SType(0x0ef7bc23))); // sd a5, 248(a5)
     }
 }
