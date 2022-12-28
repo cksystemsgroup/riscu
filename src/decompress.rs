@@ -120,5 +120,11 @@ mod tests {
         // C.LUI
         assert_eq!(decode(0x6785).unwrap(), Lui(UType(0x000017b7))); // lui a5, 0x1
         assert_eq!(decode(0x77fd).unwrap(), Lui(UType(0xfffff7b7))); // lui a5, 0xfffff
+
+        // C.J
+        assert_eq!(decode(0xb761).unwrap(), Jal(JType(0xf89ff06f))); // j 0x1fff88 (or just j -120)
+        assert_eq!(decode(0xa035).unwrap(), Jal(JType(0x02c0006f))); // j 0x2c
+        assert_eq!(decode(0xa809).unwrap(), Jal(JType(0x0120006f))); // j 0x12
+
     }
 }
