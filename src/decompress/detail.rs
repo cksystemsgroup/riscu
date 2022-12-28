@@ -90,7 +90,7 @@ pub(super) fn decompress_jump(i: u16) -> DecompressionResult {
 
 pub(super) fn decompress_misc_alu(i: u16) -> DecompressionResult {
     match (i >> 10) & 0b11 {
-        0b00 => Err(DecodingError::Unimplemented),
+        0b00 => Err(DecodingError::Unimplemented), // C.SRLI
         0b01 => {
             let shamt = get_imm(i, InstrFormat::Ci);
             let rd_rs1 = 8 + ((i >> 7) & 0b111);
@@ -98,8 +98,8 @@ pub(super) fn decompress_misc_alu(i: u16) -> DecompressionResult {
             assert!(shamt != 0, "shamt == 0 is reserved!");
 
             Ok(build_itype(CiInstr::Srai, rd_rs1, rd_rs1, shamt))
-        },
-        0b10 /* C.ANDI */ => Err(DecodingError::Unimplemented),
+        }
+        0b10 => Err(DecodingError::Unimplemented), // C.ANDI
         0b11 => {
             let rs1_rd = 8 + ((i >> 7) & 0b111);
             let rs2 = 8 + ((i >> 2) & 0b111);

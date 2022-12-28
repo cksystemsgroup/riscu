@@ -59,6 +59,9 @@ pub fn decompress_q2(i: u16) -> DecompressionResult {
 mod tests {
     use crate::{decode, types::*, Instruction::*};
 
+    // The bulk of the instructions were obtained by compiling selfie with
+    // an rv64imc enabled gcc compiler. Examples for case were created by hand.
+
     #[test]
     fn test_quadrant0() {
         // C.ADDI4SPN
@@ -121,6 +124,8 @@ mod tests {
         assert_eq!(decode(0x6785).unwrap(), Lui(UType(0x000017b7))); // lui a5, 0x1
         assert_eq!(decode(0x77fd).unwrap(), Lui(UType(0xfffff7b7))); // lui a5, 0xfffff
 
+        // ALU has a separate test-suite
+
         // C.J
         assert_eq!(decode(0xb761).unwrap(), Jal(JType(0xf89ff06f))); // j 0x1fff88 (or just j -120)
         assert_eq!(decode(0xa035).unwrap(), Jal(JType(0x02c0006f))); // j 0x2c
@@ -133,5 +138,31 @@ mod tests {
         // C.BNEZ
         assert_eq!(decode(0xe38d).unwrap(), Bne(BType(0x02079163))); // bnez a5, 0x22
         assert_eq!(decode(0xfff5).unwrap(), Bne(BType(0xfe079ee3))); // bnez a5, 0xfd (or just bnez a5, -4)
+    }
+
+    #[test]
+    fn test_quadrant1_alu() {
+        // C.SRLI unimplemented
+
+        // C.SRAI
+        assert_eq!(decode(0x840d).unwrap(), Srai(IType(0x40345413))); // srai s0, s0, 0x3
+        assert_eq!(decode(0x947d).unwrap(), Srai(IType(0x43f45413))); // srai s0, s0, 0x3f
+
+        // C.ANDI unimplemented
+
+        // C.SUB
+        assert_eq!(decode(0x8e09).unwrap(), Sub(RType(0x40a60633))); // sub a2, a2, a0
+
+        // C.XOR unimplemented
+
+        // C.OR
+        assert_eq!(decode(0x8f5d).unwrap(), Or(RType(0x00f76733))); // or a4, a4, a5
+
+        // C.AND
+        assert_eq!(decode(0x8ff9).unwrap(), And(RType(0x00e7f7b3))); // and a5, a5, a4
+
+        // C.SUBW unimplemented
+
+        // C.ADDW unimplemented
     }
 }
