@@ -96,4 +96,29 @@ mod tests {
         // C.SD: check that no sign extension happens (smoke test)
         assert_eq!(decode(0xfffc).unwrap(), Sd(SType(0x0ef7bc23))); // sd a5, 248(a5)
     }
+
+    #[test]
+    fn test_quadrant1() {
+        // C.NOP
+
+        // C.ADDI
+        assert_eq!(decode(0x17e1).unwrap(), Addi(IType(0xff878793))); // addi a5, a5, -8
+        assert_eq!(decode(0x0785).unwrap(), Addi(IType(0x00178793))); // addi a5, a5, 1
+
+        // C.ADDIW
+        assert_eq!(decode(0x37fd).unwrap(), Addiw(IType(0xfff7879b))); // addiw a5, a5, -1
+        assert_eq!(decode(0x2705).unwrap(), Addiw(IType(0x0017071b))); // addiw a4, a4, 1
+
+        // C.LI
+        assert_eq!(decode(0x4581).unwrap(), Addi(IType(0x00000593))); // li a1, 0
+        assert_eq!(decode(0x577d).unwrap(), Addi(IType(0xfff00713))); // li a4, -1
+
+        // C.ADDI16SP
+        assert_eq!(decode(0x002c).unwrap(), Addi(IType(0x00810593))); // addi a1, sp, 8
+        assert_eq!(decode(0x1141).unwrap(), Addi(IType(0xff010113))); // addi sp, sp, -16
+
+        // C.LUI
+        assert_eq!(decode(0x6785).unwrap(), Lui(UType(0x000017b7))); // lui a5, 0x1
+        assert_eq!(decode(0x77fd).unwrap(), Lui(UType(0xfffff7b7))); // lui a5, 0xfffff
+    }
 }
