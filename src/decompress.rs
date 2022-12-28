@@ -126,5 +126,12 @@ mod tests {
         assert_eq!(decode(0xa035).unwrap(), Jal(JType(0x02c0006f))); // j 0x2c
         assert_eq!(decode(0xa809).unwrap(), Jal(JType(0x0120006f))); // j 0x12
 
+        // C.BEQZ
+        assert_eq!(decode(0xc781).unwrap(), Beq(BType(0x00078463))); // beqz a5, 0x8
+        assert_eq!(decode(0xdff5).unwrap(), Beq(BType(0xfe078ee3))); // beqz a5, 0xfd (or just beqz a5, -4)
+
+        // C.BNEZ
+        assert_eq!(decode(0xe38d).unwrap(), Bne(BType(0x02079163))); // bnez a5, 0x22
+        assert_eq!(decode(0xfff5).unwrap(), Bne(BType(0xfe079ee3))); // bnez a5, 0xfd (or just bnez a5, -4)
     }
 }
