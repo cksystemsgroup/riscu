@@ -123,7 +123,7 @@ pub(super) fn build_jtype(imm: u16) -> u32 {
     let mold = |imm: u16, rd: u16, opcode: u32| -> u32 {
         let rd: u32 = rd.into();
 
-        let imm = sign_extend32(imm.into(), 13).permute(&[
+        let imm = sign_extend32(imm.into(), 12).permute(&[
             20, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 11, 19, 18, 17, 16, 15, 14, 13, 12,
         ]);
 
