@@ -150,7 +150,7 @@ pub(super) fn decompress_load_sp(i: u16, instruction_type: CiInstr) -> Decompres
         }
         CiInstr::Ld => {
             let imm = imm.inv_permute(&[5, 4, 3, 8, 7, 6]);
-            Ok(build_itype(CiInstr::Lw, rd, rs1, imm))
+            Ok(build_itype(CiInstr::Ld, rd, rs1, imm))
         }
         _ => unreachable!(),
     }
