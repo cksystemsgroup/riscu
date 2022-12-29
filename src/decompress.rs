@@ -40,7 +40,7 @@ pub fn decompress_q1(i: u16) -> DecompressionResult {
     }
 }
 
-/// Decompress compressed instructions from quadrant one to the corresponding 32-bit instruction.
+/// Decompress compressed instructions from quadrant two to the corresponding 32-bit instruction.
 pub fn decompress_q2(i: u16) -> DecompressionResult {
     match (i >> 13) & 0b111 {
         0b000 => decompress_slli(i),
@@ -164,5 +164,35 @@ mod tests {
         // C.SUBW unimplemented
 
         // C.ADDW unimplemented
+    }
+
+    #[test]
+    fn test_quadrant2() {
+        // C.SLLI
+        assert_eq!(decode(0x078e).unwrap(), Slli(IType(0x00379793))); // slli a5, a5, 0x3
+
+        // C.FLDSP unimplemented
+
+        // C.LWSP
+        assert_eq!(decode(0x4502).unwrap(), Lw(IType(0x00012503))); // lw a0, 0(sp)
+        assert_eq!(decode(0x483c).unwrap(), Lw(IType(0x05042783))); // lw a5, 80(s0)
+
+        // C.LDSP
+        assert_eq!(decode(0x60e2).unwrap(), Ld(IType(0x01813083))); // ld ra, 24(sp)
+        assert_eq!(decode(0x6442).unwrap(), Ld(IType(0x01013403))); // ld s0, 16(sp)
+
+        // C.JR, C.MV, C.ADD
+        assert_eq!(decode(0x8782).unwrap(), Jalr(IType(0x00078067))); // jr a5
+        assert_eq!(decode(0x853e).unwrap(), Add(RType(0x00f00533))); // mv a0, a5
+        assert_eq!(decode(0x9782).unwrap(), Jalr(IType(0x000780e7))); // jalr a5
+        assert_eq!(decode(0x97ba).unwrap(), Add(RType(0x00e787b3))); // add a5, a5, a4
+
+        // C.FSDSP unimplemented
+
+        // C.SWSP unimplemented
+
+        // C.SDSP
+        assert_eq!(decode(0xe022).unwrap(), Sd(SType(0x00813023))); // sd s0, 0(sp)
+        assert_eq!(decode(0xec06).unwrap(), Sd(SType(0x00113c23))); // sd ra, 24(sp)
     }
 }
