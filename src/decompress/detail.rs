@@ -73,9 +73,9 @@ pub(super) fn decompress_lui_addi16sp(i: u16) -> DecompressionResult {
         /* C.ADDI16SP */
         assert!(imm != 0, "imm = 0 is reserved!");
 
-        let imm = imm.inv_permute(&[9, 4, 6, 8, 7, 6, 5]);
+        let imm = imm.inv_permute(&[9, 4, 6, 8, 7, 5]);
 
-        Ok(build_itype(CiInstr::Addi, rd, rd, imm))
+        Ok(build_itype(CiInstr::Addi, rd, rd, sign_extend16(imm, 10)))
     } else {
         let imm = (imm as u32).inv_permute(&[17, 16, 15, 14, 13, 12]);
 
