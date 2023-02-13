@@ -1,6 +1,6 @@
 # RISC-U
 
-[![Build Statue](https://img.shields.io/github/workflow/status/cksystemsgroup/riscu/Test)](https://github.com/cksystemsgroup/riscu/actions)
+[![Build Statue](https://img.shields.io/github/actions/workflow/status/cksystemsgroup/riscu/test.yml?branch=main)](https://github.com/cksystemsgroup/riscu/actions)
 [![Crate](https://img.shields.io/crates/v/riscu.svg)](https://crates.io/crates/riscu)
 [![API](https://docs.rs/riscu/badge.svg)](https://docs.rs/riscu)
 ![Rust Version](https://img.shields.io/badge/Rust-v1.60.0-yellow)
