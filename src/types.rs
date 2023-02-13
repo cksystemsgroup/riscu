@@ -84,7 +84,7 @@ impl IType {
         Self((((((((immediate << 5) + rs1) << 3) + funct3) << 5) + rd) << 7) + opcode)
     }
     pub fn imm(&self) -> i32 {
-        sign_extend(self.0 >> 20, 12) as i32
+        sign_extend(self.0 >> 20, 12)
     }
     pub fn rs1(&self) -> Register {
         Register::from((self.0 >> 15) & 0x1f)
@@ -131,7 +131,7 @@ impl SType {
         Self((((((((((imm1 << 5) + rs2) << 5) + rs1) << 3) + funct3) << 5) + imm2) << 7) + opcode)
     }
     pub fn imm(&self) -> i32 {
-        sign_extend(((self.0 >> 20) & 0xfe0) | ((self.0 >> 7) & 0x1f), 12) as i32
+        sign_extend(((self.0 >> 20) & 0xfe0) | ((self.0 >> 7) & 0x1f), 12)
     }
     pub fn rs1(&self) -> Register {
         Register::from((self.0 >> 15) & 0x1f)
@@ -193,7 +193,7 @@ impl BType {
                 | ((self.0 & 0x0000_0f00) >> 7)
                 | ((self.0 & 0x0000_0080) << 4),
             13,
-        ) as i32
+        )
     }
     pub fn rs1(&self) -> Register {
         Register::from((self.0 >> 15) & 0x1f)
@@ -267,7 +267,7 @@ impl JType {
                 | ((self.0 & 0x0010_0000) >> 9)
                 | (self.0 & 0x000f_f000),
             21,
-        ) as i32
+        )
     }
     pub fn rd(&self) -> Register {
         Register::from((self.0 >> 7) & 0x1f)

@@ -20,7 +20,7 @@ fn compile_selfie(temp_dir: &TempDir) -> PathBuf {
         .arg("-o")
         .arg(&dst_file_path);
 
-    println!("command: {:?}", cmd);
+    println!("command: {cmd:?}");
 
     cmd.status()
         .expect("Selfie C* compile command was not successfull");
