@@ -3,7 +3,7 @@
 [![Build Statue](https://img.shields.io/github/workflow/status/cksystemsgroup/riscu/Test)](https://github.com/cksystemsgroup/riscu/actions)
 [![Crate](https://img.shields.io/crates/v/riscu.svg)](https://crates.io/crates/riscu)
 [![API](https://docs.rs/riscu/badge.svg)](https://docs.rs/riscu)
-![Rust Version](https://img.shields.io/badge/Rust-v1.50.0-yellow)
+![Rust Version](https://img.shields.io/badge/Rust-v1.60.0-yellow)
 [![Lines of Code](https://img.shields.io/tokei/lines/github/cksystemsgroup/riscu)](https://github.com/cksystemsgroup/riscu)
 [![License](https://img.shields.io/crates/l/riscu)](https://github.com/cksystemsgroup/riscu/blob/master/LICENSE)
 
