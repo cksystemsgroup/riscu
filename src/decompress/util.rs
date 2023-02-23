@@ -10,6 +10,7 @@ pub(super) enum CrInstr {
 pub(super) enum CiInstr {
     Addi,
     Addiw,
+    Andi,
     Lw,
     Ld,
     Jalr,
@@ -61,6 +62,7 @@ pub(super) fn build_itype(instruction_type: CiInstr, rd: u16, rs1: u16, imm: u16
     match instruction_type {
         CiInstr::Addi => mold(imm, rs1, 0b000, rd, 0b0010011),
         CiInstr::Addiw => mold(imm, rs1, 0b000, rd, 0b0011011),
+        CiInstr::Andi => mold(imm, rs1, 0b111, rd, 0b0010011),
         CiInstr::Lw => mold(imm, rs1, 0b010, rd, 0b0000011),
         CiInstr::Ld => mold(imm, rs1, 0b011, rd, 0b0000011),
         CiInstr::Jalr => mold(imm, rs1, 0b000, rd, 0b1100111),

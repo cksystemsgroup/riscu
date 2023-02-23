@@ -142,7 +142,7 @@ mod tests {
 
     #[test]
     fn test_quadrant1_alu() {
-        // C.SRLI unimplemented
+        // C.SRLI
         assert_eq!(decode(0x830d).unwrap(), Srli(IType(0x00375713))); // srli a4, a4, 0x3
         assert_eq!(decode(0x937d).unwrap(), Srli(IType(0x03f75713))); // srli a4, a4, 0x3f
 
@@ -150,7 +150,10 @@ mod tests {
         assert_eq!(decode(0x840d).unwrap(), Srai(IType(0x40345413))); // srai s0, s0, 0x3
         assert_eq!(decode(0x947d).unwrap(), Srai(IType(0x43f45413))); // srai s0, s0, 0x3f
 
-        // C.ANDI unimplemented
+        // C.ANDI
+        assert_eq!(decode(0x9bf1).unwrap(), Andi(IType(0xffc7f793))); // andi a5, a5, -4
+        assert_eq!(decode(0x9b81).unwrap(), Andi(IType(0xfe07f793))); // andi a5, a5, -32
+        assert_eq!(decode(0x8bfd).unwrap(), Andi(IType(0x01f7f793))); // andi a5, a5, 31
 
         // C.SUB
         assert_eq!(decode(0x8e09).unwrap(), Sub(RType(0x40a60633))); // sub a2, a2, a0

@@ -106,7 +106,17 @@ pub(super) fn decompress_misc_alu(i: u16) -> DecompressionResult {
 
             Ok(build_itype(CiInstr::Srai, rd_rs1, rd_rs1, shamt))
         }
-        0b10 => Err(DecodingError::Unimplemented), // C.ANDI
+        0b10 => {
+            let imm = get_imm(i, InstrFormat::Ci);
+            let rd_rs1 = 8 + ((i >> 7) & 0b111);
+
+            Ok(build_itype(
+                CiInstr::Andi,
+                rd_rs1,
+                rd_rs1,
+                sign_extend16(imm, 6),
+            ))
+        }
         0b11 => {
             let rs1_rd = 8 + ((i >> 7) & 0b111);
             let rs2 = 8 + ((i >> 2) & 0b111);
