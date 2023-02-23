@@ -60,7 +60,7 @@ mod tests {
     use crate::{decode, types::*, Instruction::*};
 
     // The bulk of the instructions were obtained by compiling selfie with
-    // an rv64imc enabled gcc compiler. Examples for case were created by hand.
+    // an rv64imc enabled gcc compiler. Examples for edge cases were created by hand.
 
     #[test]
     fn test_quadrant0() {
@@ -143,6 +143,8 @@ mod tests {
     #[test]
     fn test_quadrant1_alu() {
         // C.SRLI unimplemented
+        assert_eq!(decode(0x830d).unwrap(), Srli(IType(0x00375713))); // srli a4, a4, 0x3
+        assert_eq!(decode(0x937d).unwrap(), Srli(IType(0x03f75713))); // srli a4, a4, 0x3f
 
         // C.SRAI
         assert_eq!(decode(0x840d).unwrap(), Srai(IType(0x40345413))); // srai s0, s0, 0x3

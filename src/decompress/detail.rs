@@ -90,12 +90,19 @@ pub(super) fn decompress_jump(i: u16) -> DecompressionResult {
 
 pub(super) fn decompress_misc_alu(i: u16) -> DecompressionResult {
     match (i >> 10) & 0b11 {
-        0b00 => Err(DecodingError::Unimplemented), // C.SRLI
+        0b00 => {
+            let shamt = get_imm(i, InstrFormat::Ci);
+            let rd_rs1 = 8 + ((i >> 7) & 0b111);
+
+            assert!(shamt != 0, "shamt == 0 is a HINT!");
+
+            Ok(build_itype(CiInstr::Srli, rd_rs1, rd_rs1, shamt))
+        }
         0b01 => {
             let shamt = get_imm(i, InstrFormat::Ci);
             let rd_rs1 = 8 + ((i >> 7) & 0b111);
 
-            assert!(shamt != 0, "shamt == 0 is reserved!");
+            assert!(shamt != 0, "shamt == 0 is a HINT!");
 
             Ok(build_itype(CiInstr::Srai, rd_rs1, rd_rs1, shamt))
         }

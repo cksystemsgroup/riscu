@@ -14,6 +14,7 @@ pub(super) enum CiInstr {
     Ld,
     Jalr,
     Slli,
+    Srli,
     Srai,
 }
 
@@ -65,6 +66,7 @@ pub(super) fn build_itype(instruction_type: CiInstr, rd: u16, rs1: u16, imm: u16
         CiInstr::Jalr => mold(imm, rs1, 0b000, rd, 0b1100111),
         CiInstr::Slli => mold(imm, rs1, 0b001, rd, 0b0010011),
         CiInstr::Srai => mold((0b0100000 << 5) | imm, rs1, 0b101, rd, 0b0010011),
+        CiInstr::Srli => mold(imm, rs1, 0b101, rd, 0b0010011),
     }
 }
 
@@ -75,7 +77,6 @@ pub(super) fn build_btype(instruction_type: CbInstr, rs1: u16, imm: u16) -> u32 
 
         let imm: u32 = imm.permute(&[12, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 11]).into();
 
-        // FIXME: check if this is correct!
         ((imm >> 5) << 25)
             | (rs2 << 20)
             | (rs1 << 15)
