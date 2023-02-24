@@ -166,7 +166,8 @@ mod tests {
         // C.AND
         assert_eq!(decode(0x8ff9).unwrap(), And(RType(0x00e7f7b3))); // and a5, a5, a4
 
-        // C.SUBW unimplemented
+        // C.SUBW
+        assert_eq!(decode(0x9f01).unwrap(), Subw(RType(0x4087073b))); // subw a4, a4, s0
 
         // C.ADDW
         assert_eq!(decode(0x9f21).unwrap(), Addw(RType(0x0087073b))); // addw a4, a4, s0
