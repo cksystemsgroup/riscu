@@ -125,6 +125,7 @@ pub(super) fn decompress_misc_alu(i: u16) -> DecompressionResult {
                 (0, 0b00) => Ok(build_rtype(CrInstr::Sub, rs1_rd, rs1_rd, rs2)),
                 (0, 0b10) => Ok(build_rtype(CrInstr::Or, rs1_rd, rs1_rd, rs2)),
                 (0, 0b11) => Ok(build_rtype(CrInstr::And, rs1_rd, rs1_rd, rs2)),
+                (1, 0b01) => Ok(build_rtype(CrInstr::Addw, rs1_rd, rs1_rd, rs2)),
                 (1, 0b10) => Err(DecodingError::Reserved),
                 (1, 0b11) => Err(DecodingError::Reserved),
                 _ => unreachable!(),

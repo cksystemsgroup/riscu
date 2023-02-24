@@ -5,6 +5,7 @@ pub(super) enum CrInstr {
     Add,
     Or,
     And,
+    Addw,
 }
 
 pub(super) enum CiInstr {
@@ -47,6 +48,7 @@ pub(super) fn build_rtype(instruction_type: CrInstr, rd: u16, rs1: u16, rs2: u16
         CrInstr::Add => mold(0b0000000, rs2, rs1, 0b000, rd, 0b0110011),
         CrInstr::Or => mold(0b0000000, rs2, rs1, 0b110, rd, 0b0110011),
         CrInstr::And => mold(0b0000000, rs2, rs1, 0b111, rd, 0b0110011),
+        CrInstr::Addw => mold(0b0000000, rs2, rs1, 0b000, rd, 0b0111011),
     }
 }
 

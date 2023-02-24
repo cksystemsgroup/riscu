@@ -168,7 +168,8 @@ mod tests {
 
         // C.SUBW unimplemented
 
-        // C.ADDW unimplemented
+        // C.ADDW
+        assert_eq!(decode(0x9f21).unwrap(), Addw(RType(0x0087073b))); // addw a4, a4, s0
     }
 
     #[test]
