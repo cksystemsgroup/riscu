@@ -49,7 +49,7 @@ pub fn decompress_q2(i: u16) -> DecompressionResult {
         0b011 => decompress_load_sp(i, CiInstr::Ld),
         0b100 => decompress_jr_mv_add(i),
         0b101 => Err(DecodingError::Unimplemented), // C.FSDSP
-        0b110 => Err(DecodingError::Unimplemented), // C.SWSP
+        0b110 => decompress_store_sp(i, CsInstr::Sw),
         0b111 => decompress_store_sp(i, CsInstr::Sd),
         _ => unreachable!(),
     }
@@ -196,7 +196,8 @@ mod tests {
 
         // C.FSDSP unimplemented
 
-        // C.SWSP unimplemented
+        // C.SWSP
+        assert_eq!(decode(0xd03e).unwrap(), Sw(SType(0x02f12023))); // sw a5, 21(sp)
 
         // C.SDSP
         assert_eq!(decode(0xe022).unwrap(), Sd(SType(0x00813023))); // sd s0, 0(sp)

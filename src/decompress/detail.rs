@@ -204,12 +204,8 @@ pub(super) fn decompress_store_sp(i: u16, instruction_type: CsInstr) -> Decompre
     let rs2 = (i >> 2) & 0b1_1111;
 
     match instruction_type {
-        CsInstr::Sw => Err(DecodingError::Unimplemented),
-        CsInstr::Sd => {
-            let imm = imm.inv_permute(&[5, 4, 3, 8, 7, 6]);
-
-            Ok(build_stype(CsInstr::Sd, rs1, rs2, imm))
-        }
+        CsInstr::Sw => Ok(build_stype(CsInstr::Sw, rs1, rs2, imm.inv_permute(&[5, 4, 3, 2, 7, 6]))),
+        CsInstr::Sd => Ok(build_stype(CsInstr::Sd, rs1, rs2, imm.inv_permute(&[5, 4, 3, 8, 7, 6])))
     }
 }
 // }}}
