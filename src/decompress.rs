@@ -103,6 +103,7 @@ mod tests {
     #[test]
     fn test_quadrant1() {
         // C.NOP
+        assert_eq!(decode(0x0001).unwrap(), Addi(IType(0x00000013))); // addi a0, a0, 0
 
         // C.ADDI
         assert_eq!(decode(0x17e1).unwrap(), Addi(IType(0xff878793))); // addi a5, a5, -8

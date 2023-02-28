@@ -8,7 +8,7 @@ pub(super) fn decompress_addi4spn(i: u16) -> DecompressionResult {
     let imm = get_imm(i, InstrFormat::Ciw).inv_permute(&[5, 4, 9, 8, 7, 6, 2, 3]);
     let rd = 8 + ((i >> 2) & 0b111);
 
-    assert!(imm != 0, "imm == 0 is reserved");
+    assert!(imm != 0, "imm == 0 is reserved!");
 
     Ok(build_itype(CiInstr::Addi, rd, Register::Sp as u16, imm))
 }
@@ -42,16 +42,22 @@ pub(super) fn decompress_addi(i: u16, instruction_type: CiInstr) -> Decompressio
     let imm = sign_extend16(get_imm(i, InstrFormat::Ci), 6);
     let dest = (i >> 7) & 0b1_1111;
 
-    assert!(dest != 0, "dest == 0 is reserved!");
-    if matches!(instruction_type, CiInstr::Addi) {
-        assert!(imm != 0, "imm == 0 is a HINT!");
+    if matches!(instruction_type, CiInstr::Addiw) {
+        assert!(dest != 0, "dest == 0 is reserved!");
+
+        return Ok(build_itype(CiInstr::Addiw, dest, dest, imm));
     }
 
-    Ok(match instruction_type {
-        CiInstr::Addi => build_itype(CiInstr::Addi, dest, dest, imm),
-        CiInstr::Addiw => build_itype(CiInstr::Addiw, dest, dest, imm),
-        _ => unreachable!(),
-    })
+    if dest == 0 {
+        // The instruction is the pseudoinstruction nop.
+        assert!(imm == 0, "imm != 0 is a HINT!");
+
+        Ok(build_itype(CiInstr::Addi, dest, dest, imm))
+    } else {
+        assert!(imm != 0, "imm == 0 is a HINT!");
+
+        Ok(build_itype(CiInstr::Addi, dest, dest, imm))
+    }
 }
 
 pub(super) fn decompress_li(i: u16) -> DecompressionResult {
@@ -203,9 +209,9 @@ pub(super) fn decompress_store_sp(i: u16, instruction_type: CsInstr) -> Decompre
     let rs1 = Register::Sp as u16;
     let rs2 = (i >> 2) & 0b1_1111;
 
-    match instruction_type {
-        CsInstr::Sw => Ok(build_stype(CsInstr::Sw, rs1, rs2, imm.inv_permute(&[5, 4, 3, 2, 7, 6]))),
-        CsInstr::Sd => Ok(build_stype(CsInstr::Sd, rs1, rs2, imm.inv_permute(&[5, 4, 3, 8, 7, 6])))
-    }
+    Ok(match instruction_type {
+        CsInstr::Sw => build_stype(CsInstr::Sw, rs1, rs2, imm.inv_permute(&[5, 4, 3, 2, 7, 6])),
+        CsInstr::Sd => build_stype(CsInstr::Sd, rs1, rs2, imm.inv_permute(&[5, 4, 3, 8, 7, 6])),
+    })
 }
 // }}}
