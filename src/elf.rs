@@ -21,6 +21,7 @@ pub struct Program {
     pub code: ProgramSegment<u8>,
     pub data: ProgramSegment<u8>,
     pub instruction_range: Range<u64>,
+    pub is64: bool,
 }
 
 impl Program {
@@ -81,9 +82,9 @@ where
 }
 
 fn extract_program(raw: &[u8], elf: &Elf) -> Result<Program, RiscuError> {
-    if elf.is_lib || !elf.is_64 || !elf.little_endian {
+    if elf.is_lib || !elf.little_endian {
         return Err(RiscuError::InvalidRiscu(
-            "has to be an executable, 64bit, static, little endian binary",
+            "has to be an executable, little endian binary",
         ));
     }
 
@@ -192,6 +193,7 @@ fn extract_program(raw: &[u8], elf: &Elf) -> Result<Program, RiscuError> {
             content: [data_segment.to_vec(), vec![0; data_padding]].concat(),
         },
         instruction_range,
+        is64: elf.is_64,
     })
 }
 
