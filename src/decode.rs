@@ -21,6 +21,7 @@ use thiserror::Error;
 
 pub const INSTRUCTION_SIZE: usize = 4;
 pub const WORD_SIZE: usize = 8;
+pub const WORD_SIZE32BIT: usize = 4;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Error)]
 pub enum DecodingError {
